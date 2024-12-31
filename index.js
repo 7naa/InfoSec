@@ -122,8 +122,27 @@ async function run() {
  *                 type: string
  *                 description: The email address of the user.
  *                 example: johndoe@example.com
- 
+ *     responses:
+ *       200:
+ *         description: User successfully registered.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 acknowledged:
+ *                   type: boolean
+ *                   example: true
+ *                 insertedId:
+ *                   type: string
+ *                   description: The unique ID of the newly created user.
+ *                   example: 60b8d295f9d5b90012e3f3e5
+ *       400:
+ *         description: Bad Request - Missing or invalid data.
+ *       500:
+ *         description: Internal Server Error - Failed to save user to the database.
  */
+
 
 app.post('/user', async (req, res) => {
   const hash = bcrypt.hashSync(req.body.password, 15);
