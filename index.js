@@ -1,7 +1,7 @@
 const express = require('express');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 
 //const uri = "mongodb+srv://7naa:perempuancantik@infosecurity.zvukc.mongodb.net/?retryWrites=true&w=majority&appName=InfoSecurity";
 const uri = "mongodb+srv://7naa:perempuancantik@infosecurity.zvukc.mongodb.net/";
@@ -19,7 +19,8 @@ let playerPosition = null;
 
 
 // Function to verify JWT token
-function verifyToken(req, res, next) {
+function verifyToken(req, res, next) { 
+
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
 
