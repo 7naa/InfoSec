@@ -1,8 +1,11 @@
 const express = require('express');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const app = express();
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsDoc = require('swagger-jsdoc');
 const port = process.env.PORT || 3000;
 
+app.use(express.json());
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
@@ -25,6 +28,25 @@ const client = new MongoClient(uri, {
   }
 });
 
+const swaggerOptions = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "API Documentation",
+      version: "1.0.0",
+      description: "API for managing users and other functionalities.",
+    },
+    servers: [
+      {
+        url: `http://localhost:${port}`,
+      },
+    ],
+  },
+  apis: ["./index.js"], // Path to your API documentation in the code
+};
+
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 let selectedMap = null;
 let playerPosition = null;
 
@@ -63,6 +85,21 @@ async function run() {
     res.send('Welcome to the Security Management System');
   });
 }
+/**
+ * @swagger
+ * /:
+ *   get:
+ *     summary: Welcome message
+ *     description: Returns a welcome message for the Security Management System.
+ *     responses:
+ *       200:
+ *         description: A welcome message
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: Welcome to the Security Management System
+ */
 
 // User registration
 app.post('/user', async (req, res) => {
