@@ -32,15 +32,10 @@ const swaggerOptions = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "API Documentation",
+      title: "Welcome to Our Game",
       version: "1.0.0",
-      description: "API for managing users and other functionalities.",
+      description: "This is the best game in the world",
     },
-    servers: [
-      {
-        url: `http://localhost:${port}`,
-      },
-    ],
   },
   apis: ["./index.js"], // Path to your API documentation in the code
 };
@@ -114,6 +109,49 @@ app.post('/user', async (req, res) => {
   res.send(result);
 });
 
+/**
+ * @swagger
+ * /login:
+ *   post:
+ *     summary: User login
+ *     description: Authenticates a user with a username and password and returns a JWT token on successful login.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 description: The username of the user.
+ *                 example: johndoe
+ *               password:
+ *                 type: string
+ *                 description: The password of the user.
+ *                 example: Password123!
+ *     responses:
+ *       200:
+ *         description: Login successful, returns a JWT token.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: string
+ *               example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiIxMjM0NTY3ODkwIiwidXNlcm5hbWUiOiJqb2huZG9lIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+ *       400:
+ *         description: Missing username or password.
+ *       401:
+ *         description: Unauthorized. Incorrect username or password.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               examples:
+ *                 wrongPassword:
+ *                   value: WRONG PASSWORD! TRY AGAIN
+ *                 usernameNotFound:
+ *                   value: USERNAME NOT FOUND
+ */
 // User login
 app.post('/login', async (req, res) => {
   if (req.body.username != null && req.body.password != null) {
