@@ -4,12 +4,14 @@ const app = express();
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsDoc = require('swagger-jsdoc');
 const port = process.env.PORT || 3000;
-
+const uri = "mongodb+srv://7naa:perempuancantik@infosecurity.zvukc.mongodb.net/";
 app.use(express.json());
 
 async function run() {
   try {
     await client.connect();
+    await client.db("admin").command({ ping: 1 });
+    await client.db("user").command({ ping: 1 });
     console.log("Connected to MongoDB successfully!");
   } catch (err) {
     console.error("Failed to connect to MongoDB:", err);
@@ -28,7 +30,7 @@ app.listen(port, () => {
 });
 
 //const uri = "mongodb+srv://7naa:perempuancantik@infosecurity.zvukc.mongodb.net/?retryWrites=true&w=majority&appName=InfoSecurity";
-const uri = "mongodb+srv://7naa:perempuancantik@infosecurity.zvukc.mongodb.net/";
+
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
@@ -90,6 +92,38 @@ async function run() {
     res.send('Welcome to the Security Management System');
   });
 }
+
+/**
+ * @swagger
+ * /user:
+ *   post:
+ *     summary: Register a new user
+ *     description: Creates a new user account with a hashed password.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 description: The username of the user.
+ *                 example: johndoe
+ *               password:
+ *                 type: string
+ *                 description: The password for the user account.
+ *                 example: Password123!
+ *               name:
+ *                 type: string
+ *                 description: The full name of the user.
+ *                 example: John Doe
+ *               email:
+ *                 type: string
+ *                 description: The email address of the user.
+ *                 example: johndoe@example.com
+ 
+ */
 
 app.post('/user', async (req, res) => {
   const hash = bcrypt.hashSync(req.body.password, 15);
