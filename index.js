@@ -7,6 +7,16 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json());
 
+async function run() {
+  try {
+    await client.connect();
+    console.log("Connected to MongoDB successfully!");
+  } catch (err) {
+    console.error("Failed to connect to MongoDB:", err);
+    process.exit(1); // Exit the app if connection fails
+  }
+}
+
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 }).on('error', (err) => {
@@ -80,23 +90,7 @@ async function run() {
     res.send('Welcome to the Security Management System');
   });
 }
-/**
- * @swagger
- * /:
- *   get:
- *     summary: Welcome message
- *     description: Returns a welcome message for the Security Management System.
- *     responses:
- *       200:
- *         description: A welcome message
- *         content:
- *           text/plain:
- *             schema:
- *               type: string
- *               example: Welcome to the Security Management System
- */
 
-// User registration
 app.post('/user', async (req, res) => {
   const hash = bcrypt.hashSync(req.body.password, 15);
 
@@ -130,27 +124,7 @@ app.post('/user', async (req, res) => {
  *                 type: string
  *                 description: The password of the user.
  *                 example: Password123!
- *     responses:
- *       200:
- *         description: Login successful, returns a JWT token.
- *         content:
- *           application/json:
- *             schema:
- *               type: string
- *               example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiIxMjM0NTY3ODkwIiwidXNlcm5hbWUiOiJqb2huZG9lIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
- *       400:
- *         description: Missing username or password.
- *       401:
- *         description: Unauthorized. Incorrect username or password.
- *         content:
- *           text/plain:
- *             schema:
- *               type: string
- *               examples:
- *                 wrongPassword:
- *                   value: WRONG PASSWORD! TRY AGAIN
- *                 usernameNotFound:
- *                   value: USERNAME NOT FOUND
+ 
  */
 // User login
 app.post('/login', async (req, res) => {
