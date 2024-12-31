@@ -145,16 +145,23 @@ async function run() {
 
 
 app.post('/user', async (req, res) => {
-  const hash = bcrypt.hashSync(req.body.password, 15);
+  try {
+    const hash = bcrypt.hashSync(req.body.password, 15);
 
-  let result = await client.db("user").collection("userdetail").insertOne({
-    username: req.body.username,
-    password: hash,
-    name: req.body.name,
-    email: req.body.email
-  });
-  res.send(result);
+    let result = await client.db("user").collection("userdetail").insertOne({
+      username: req.body.username,
+      password: hash,
+      name: req.body.name,
+      email: req.body.email
+    });
+
+    res.status(200).send(result); // Send the result with status code 200
+  } catch (err) {
+    console.error("Error inserting user:", err);
+    res.status(500).send({ error: "Internal Server Error" });
+  }
 });
+
 
 /**
  * @swagger
