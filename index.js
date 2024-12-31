@@ -4,7 +4,7 @@ const app = express();
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsDoc = require('swagger-jsdoc');
 const port = process.env.PORT || 3000;
-const uri = "mongodb+srv://7naa:perempuancantik@infosecurity.zvukc.mongodb.net/";
+const uri = "mongodb+srv://7naa:perempuancantik@infosecurity.zvukc.mongodb.net/?retryWrites=true&w=majority&appName=InfoSecurity";
 app.use(express.json());
 
 async function run() {
