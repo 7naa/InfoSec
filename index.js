@@ -136,6 +136,52 @@ app.post('/initialize-admin', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /admin/register:
+ *   post:
+ *     summary: Register a new admin
+ *     description: Allows an existing admin to register another admin. Requires admin authentication and role verification.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 description: The username for the new admin.
+ *                 example: adminuser
+ *               password:
+ *                 type: string
+ *                 description: The password for the new admin (must be at least 8 characters long).
+ *                 example: StrongPass123!
+ *     responses:
+ *       200:
+ *         description: Admin registered successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Admin registered successfully
+ *                 adminId:
+ *                   type: string
+ *                   description: The unique ID of the newly created admin.
+ *                   example: 60b8d295f9d5b90012e3f3e5
+ *       400:
+ *         description: Bad Request - Missing or invalid data.
+ *       403:
+ *         description: Forbidden - User is not authorized to register a new admin.
+ *       500:
+ *         description: Internal Server Error - Failed to register admin.
+ */
+
 // Admin registration
 app.post('/admin/register', verifyToken, verifyAdmin, async (req, res) => {
   const { username, password } = req.body;
