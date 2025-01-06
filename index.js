@@ -19,6 +19,16 @@ const client = new MongoClient(uri, {
   }
 });
 
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`);
+}).on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${port} is already in use.`);
+  } else {
+    console.error(err);
+  }
+});
+
 const swaggerOptions = {
   definition: {
     openapi: "3.0.0",
