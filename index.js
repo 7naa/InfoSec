@@ -4,6 +4,8 @@ const port = process.env.PORT || 4000;
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsDoc = require('swagger-jsdoc');
 
 // Middleware to parse JSON in request body
 app.use(express.json());
@@ -16,6 +18,31 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
+
+const swaggerOptions = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Admin API",
+      version: "1.0.0",
+    },
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
+      },
+    },
+    security: [
+      {
+        bearerAuth: [],
+      },
+    ],
+  },
+  apis: ["./index.js"], // Replace with the path to your code file
+};
 
 // Function to verify JWT token
 function verifyToken(req, res, next) {
@@ -39,6 +66,50 @@ function verifyAdmin(req, res, next) {
   }
   next();
 }
+
+/**
+ * @swagger
+ * /initialize-admin:
+ *   post:
+ *     summary: Initialize the first admin
+ *     description: This endpoint is used to create the first admin. Can only be used once.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 description: The username for the admin.
+ *                 example: superadmin
+ *               password:
+ *                 type: string
+ *                 description: The password for the admin (must be at least 8 characters long).
+ *                 example: StrongPass123!
+ *     responses:
+ *       200:
+ *         description: Admin initialized successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Admin initialized successfully
+ *                 adminId:
+ *                   type: string
+ *                   description: The unique ID of the newly created admin.
+ *                   example: 60b8d295f9d5b90012e3f3e5
+ *       400:
+ *         description: Bad Request - Missing or invalid data.
+ *       403:
+ *         description: Forbidden - Initialization is not allowed if an admin already exists.
+ *       500:
+ *         description: Internal Server Error - Failed to initialize admin.
+ */
 
 // Initialize the first admin (one-time use)
 app.post('/initialize-admin', async (req, res) => {
