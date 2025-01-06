@@ -23,26 +23,16 @@ const swaggerOptions = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "Admin API",
+      title: "Welcome to Our Game",
       version: "1.0.0",
+      description: "This is the best game in the world",
     },
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: "http",
-          scheme: "bearer",
-          bearerFormat: "JWT",
-        },
-      },
-    },
-    security: [
-      {
-        bearerAuth: [],
-      },
-    ],
   },
-  apis: ["./index.js"], // Replace with the path to your code file
+  apis: ["./index.js"], // Path to your API documentation in the code
 };
+
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // Function to verify JWT token
 function verifyToken(req, res, next) {
