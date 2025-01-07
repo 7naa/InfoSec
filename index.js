@@ -3,7 +3,7 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const app = express();
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsDoc = require('swagger-jsdoc');
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4000;
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
@@ -77,6 +77,14 @@ function verifyToken(req, res, next) {
   });
 }
 
+// Middleware to verify admin role
+function verifyAdmin(req, res, next) {
+  if (req.identity.role !== 'admin') {
+    return res.status(403).send('Forbidden: Admins only.');
+  }
+  next();
+}
+
 async function run() {
   await client.connect();
   await client.db("admin").command({ ping: 1 });
@@ -90,14 +98,6 @@ async function run() {
   app.get('/', (req, res) => {
     res.send('Welcome to the Security Management System');
   });
-}
-
-// Middleware to verify admin role
-function verifyAdmin(req, res, next) {
-  if (req.identity.role !== 'admin') {
-    return res.status(403).send('Forbidden: Admins only.');
-  }
-  next();
 }
 
 /**
@@ -121,27 +121,6 @@ function verifyAdmin(req, res, next) {
  *                 type: string
  *                 description: The password for the admin (must be at least 8 characters long).
  *                 example: StrongPass123!
- *     responses:
- *       200:
- *         description: Admin initialized successfully.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Admin initialized successfully
- *                 adminId:
- *                   type: string
- *                   description: The unique ID of the newly created admin.
- *                   example: 60b8d295f9d5b90012e3f3e5
- *       400:
- *         description: Bad Request - Missing or invalid data.
- *       403:
- *         description: Forbidden - Initialization is not allowed if an admin already exists.
- *       500:
- *         description: Internal Server Error - Failed to initialize admin.
  */
 
 // Initialize the first admin (one-time use)
@@ -202,28 +181,7 @@ app.post('/initialize-admin', async (req, res) => {
  *                 type: string
  *                 description: The password for the new admin (must be at least 8 characters long).
  *                 example: StrongPass123!
- *     responses:
- *       200:
- *         description: Admin registered successfully.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Admin registered successfully
- *                 adminId:
- *                   type: string
- *                   description: The unique ID of the newly created admin.
- *                   example: 60b8d295f9d5b90012e3f3e5
- *       400:
- *         description: Bad Request - Missing or invalid data.
- *       403:
- *         description: Forbidden - User is not authorized to register a new admin.
- *       500:
- *         description: Internal Server Error - Failed to register admin.
- */
+*/
 
 // Admin registration
 app.post('/admin/register', verifyToken, verifyAdmin, async (req, res) => {
