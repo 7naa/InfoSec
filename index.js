@@ -490,18 +490,6 @@ app.delete('/admin/user/:id', verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
-async function run() {
-  await client.connect();
-  await client.db("admin").command({ ping: 1 });
-  console.log("You successfully connected to MongoDB!");
-
-  app.use(express.json());
-
-  app.get('/', (req, res) => {
-    res.send('Welcome to the Security Management System');
-  });
-}
-
 /**
  * @swagger
  * /user:
