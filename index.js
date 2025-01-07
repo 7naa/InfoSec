@@ -38,10 +38,6 @@ app.listen(port, () => {
   }
 });
 
-//const uri = "mongodb+srv://7naa:perempuancantik@infosecurity.zvukc.mongodb.net/?retryWrites=true&w=majority&appName=InfoSecurity";
-
-
-
 const swaggerOptions = {
   definition: {
     openapi: "3.0.0",
@@ -86,9 +82,6 @@ async function run() {
   console.log("You successfully connected to MongoDB!");
 
   app.use(express.json());
-  /*app.listen(port, () => {
-    console.log(`Server listening at http://localSecurity:${port}`);
-  });*/
 
   app.get('/', (req, res) => {
     res.send('Welcome to the Security Management System');
@@ -288,13 +281,5 @@ app.patch('/move', (req, res) => {
 
   res.send(`You moved ${direction}. ${nextRoomMessage}`);
 });
-
-/*app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
-});*/
-
-
-
-
 
 run().catch(console.error);
