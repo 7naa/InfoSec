@@ -77,13 +77,13 @@ function verifyToken(req, res, next) {
   });
 }
 
-// Middleware to verify admin role
+/* Middleware to verify admin role
 function verifyAdmin(req, res, next) {
   if (req.identity.role !== 'admin') {
     return res.status(403).send('Forbidden: Admins only.');
   }
   next();
-}
+}*/
 
 async function run() {
   await client.connect();
