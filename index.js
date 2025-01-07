@@ -3,7 +3,7 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const app = express();
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsDoc = require('swagger-jsdoc');
-const port = process.env.PORT || 4000;
+const port = process.env.PORT || 3000;
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
