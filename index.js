@@ -83,6 +83,41 @@ function verifyAdmin(req, res, next) {
   next();
 }
 
+// Initialize the first admin (one-time use)
+app.post('/initialize-admin', async (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).send("Missing admin username or password");
+  }
+
+  if (password.length < 8) {
+    return res.status(400).send("Password must be at least 8 characters long.");
+  }
+
+  try {
+    // Check if any admin already exists
+    const existingAdmin = await client.db("user").collection("admin").findOne({});
+    if (existingAdmin) {
+      return res.status(403).send("An admin already exists. Initialization is not allowed.");
+    }
+
+    // Hash the password
+    const hash = bcrypt.hashSync(password, 15);
+
+    // Insert the new admin
+    const result = await client.db("user").collection("admin").insertOne({
+      username,
+      password: hash
+    });
+
+    res.send({ message: "Admin initialized successfully", adminId: result.insertedId });
+  } catch (error) {
+    console.error("Error during admin initialization:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
 /**
  * @swagger
  * /admin/register:
