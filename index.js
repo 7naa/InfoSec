@@ -4,8 +4,6 @@ const app = express();
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsDoc = require('swagger-jsdoc');
 const port = process.env.PORT || 3000;
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 
 app.use(express.json());
 
@@ -39,6 +37,10 @@ app.listen(port, () => {
     console.error(err);
   }
 });
+
+//const uri = "mongodb+srv://7naa:perempuancantik@infosecurity.zvukc.mongodb.net/?retryWrites=true&w=majority&appName=InfoSecurity";
+
+
 
 const swaggerOptions = {
   definition: {
@@ -77,13 +79,6 @@ function verifyToken(req, res, next) {
   });
 }
 
-/* Middleware to verify admin role
-function verifyAdmin(req, res, next) {
-  if (req.identity.role !== 'admin') {
-    return res.status(403).send('Forbidden: Admins only.');
-  }
-  next();
-}*/
 
 async function run() {
   await client.connect();
@@ -150,7 +145,7 @@ async function run() {
  *         description: Internal Server Error - Failed to save user to the database.
  */
 
-//register user
+
 app.post('/user', async (req, res) => {
   try {
     const hash = bcrypt.hashSync(req.body.password, 15);
