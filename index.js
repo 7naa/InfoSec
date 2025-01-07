@@ -577,10 +577,12 @@ app.post('/user', async (req, res) => {
 
 /**
  * @swagger
- * /user/login:
+ * /login:
  *   post:
  *     summary: User login
- *     description: Authenticates a user with a username and password and returns a JWT token on successful login.
+ *     description: Authenticates a user by validating the provided username and password. Returns a JWT token upon successful login.
+ *     tags:
+ *       - User
  *     requestBody:
  *       required: true
  *       content:
@@ -590,36 +592,90 @@ app.post('/user', async (req, res) => {
  *             properties:
  *               username:
  *                 type: string
- *                 description: The username of the user.
  *                 example: johndoe
  *               password:
  *                 type: string
- *                 description: The password of the user.
- *                 example: Password123!
- 
+ *                 example: mysecurepassword
+ *             required:
+ *               - username
+ *               - password
+ *     responses:
+ *       200:
+ *         description: Successfully logged in and a JWT token is returned.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   example: 64b67e59fc13ae1c2400003c
+ *                 token:
+ *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NWIxYjY2MzNkZDZkNzEyMDg2MzNlZDMyMiIsIm5hbWUiOiJKb2huIERvZSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNjYzMjE5OTYzLCJleHBpcmVkX3N0YWNrYXRhdXNiLmdodGN6dS5UAAc.5ew6pkURxgf80KwBdZI6uOSb9Eq_fYr-9sgWwr4QdTw
+ *                 role:
+ *                   type: string
+ *                   example: user
+ *       400:
+ *         description: Missing username or password.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Missing username or password
+ *       401:
+ *         description: Unauthorized due to invalid username or password.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Wrong password! Try again
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Internal Server Error
  */
 // User login
 app.post('/login', async (req, res) => {
-  if (req.body.username != null && req.body.password != null) {
-    let result = await client.db("user").collection("userdetail").findOne({
-      username: req.body.username
-    });
+  const { username, password } = req.body;
 
-    if (result) {
-      if (bcrypt.compareSync(req.body.password, result.password) == true) {
-        var token = jwt.sign(
-          { _id: result._id, username: result.username, name: result.name },
-          'manabolehbagi'
-        );
-        res.send(token);
-      } else {
-        res.status(401).send('WRONG PASSWORD! TRY AGAIN');
-      }
-    } else {
-      res.status(401).send("USERNAME NOT FOUND");
+  if (!username || !password) {
+    return res.status(400).send("Missing username or password");
+  }
+
+  try {
+    const user = await client.db("user").collection("userdetail").findOne({ username });
+
+    if (!user) {
+      return res.status(401).send("Username not found");
     }
-  } else {
-    res.status(400).send("MISSING USERNAME OR PASSWORD");
+
+    const isPasswordValid = bcrypt.compareSync(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).send("Wrong password! Try again");
+    }
+
+    const token = jwt.sign(
+      { _id: user._id, username: user.username, name: user.name, role: "user" },
+      'manabolehbagi'
+    );
+
+    res.send({ _id: user._id, token, role: "user" });
+  } catch (error) {
+    console.error("Error during user login:", error);
+    res.status(500).send("Internal Server Error");
   }
 });
 
