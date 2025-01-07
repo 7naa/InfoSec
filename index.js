@@ -1030,4 +1030,15 @@ app.patch('/move', verifyToken, (req, res) => {
   }
 });
 
-run().catch(console.error);
+// MongoDB connection setup
+async function run() {
+  try {
+    await client.connect();
+    console.log('Connected to MongoDB successfully!');
+  } catch (error) {
+    console.error('Failed to connect to MongoDB:', error);
+  }
+}
+run().catch(console.dir);
+
+/*run().catch(console.error);*/
