@@ -892,6 +892,109 @@ app.post('/choose-map', verifyToken, (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /move:
+ *   patch:
+ *     summary: Move the player to a different room in the selected map.
+ *     description: Authenticated route that allows the player to move in a specified direction in the currently selected map.
+ *     tags:
+ *       - Map Movement
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               direction:
+ *                 type: string
+ *                 description: The direction in which the player wants to move (e.g., "north", "south", "east", "west").
+ *                 example: north
+ *     responses:
+ *       200:
+ *         description: The player successfully moved to a new room.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "You moved north. Welcome to the next room!"
+ *       400:
+ *         description: Bad request due to an invalid direction, missing map selection, or invalid player position.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Invalid direction: north"
+ *       404:
+ *         description: The selected map file was not found on the server.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Map \"map1\" not found."
+ *       500:
+ *         description: Internal server error due to issues reading or parsing the map file.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Error reading or parsing the map file."
+ */
+
+// Move - Authenticated route
+app.patch('/move', verifyToken, (req, res) => {
+  const direction = req.body.direction;
+
+  if (!req.identity.selectedMap) {
+    res.status(400).send("No map selected.");
+    return;
+  }
+
+  const selectedMapName = req.identity.selectedMap;
+  const mapJsonPath = path.join(__dirname, `${selectedMapName}.json`);
+
+  if (!fs.existsSync(mapJsonPath)) {
+    res.status(404).send(`Map "${selectedMapName}" not found.`);
+    return;
+  }
+
+  try {
+    const mapData = JSON.parse(fs.readFileSync(mapJsonPath, 'utf-8'));
+    const playerPosition = req.identity.playerPosition;
+    const currentRoom = mapData.map[playerPosition];
+
+    if (!currentRoom) {
+      res.status(400).send("Invalid player position.");
+      return;
+    }
+
+    const nextRoom = currentRoom[direction];
+    if (!nextRoom) {
+      res.status(400).send(`Invalid direction: ${direction}`);
+      return;
+    }
+
+    const nextRoomMessage = mapData.map[nextRoom].message;
+    req.identity.playerPosition = nextRoom; // Update player position
+
+    res.send(`You moved ${direction}. ${nextRoomMessage}`);
+  } catch (error) {
+    res.status(500).send('Error reading or parsing the map file.');
+  }
+});
+
 // Delete user account
 app.delete('/user/:id', verifyToken, async (req, res) => {
   let result = await client.db("user").collection("userdetail").deleteOne({
