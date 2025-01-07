@@ -679,18 +679,87 @@ app.post('/login', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /user/{id}:
+ *   get:
+ *     summary: Get user details by ID
+ *     description: Retrieves the details of a user by their ID. The request requires a valid token for authentication.
+ *     tags:
+ *       - User
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The unique identifier of the user whose details are to be fetched.
+ *         schema:
+ *           type: string
+ *           example: 64b67e59fc13ae1c2400003c
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully fetched the user details.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   example: 64b67e59fc13ae1c2400003c
+ *                 username:
+ *                   type: string
+ *                   example: johndoe
+ *                 name:
+ *                   type: string
+ *                   example: John Doe
+ *                 email:
+ *                   type: string
+ *                   example: johndoe@example.com
+ *       401:
+ *         description: Unauthorized access if the token is invalid or the user does not match the requested ID.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Unauthorized access
+ *       404:
+ *         description: User not found if no user with the provided ID exists.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: User not found
+ *       500:
+ *         description: Internal server error if something goes wrong with the database or server.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Internal Server Error
+ */
+
 // Get user profile
 app.get('/user/:id', verifyToken, async (req, res) => {
   if (req.identity._id != req.params.id) {
-    res.status(401).send('Unauthorized Access');
-  } else {
-    let result = await client.db("user").collection("userdetail").findOne({
-      _id: new ObjectId(req.params.id)
-    });
-    res.send(result);
+    return res.status(401).send('Unauthorized access');
   }
-});
 
+  let result = await client.db("user").collection("userdetail").findOne({
+    _id: new ObjectId(req.params.id)
+  });
+  res.send(result);
+});
 
 // Delete user account
 app.delete('/user/:id', verifyToken, async (req, res) => {
