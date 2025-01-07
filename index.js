@@ -83,6 +83,81 @@ function verifyAdmin(req, res, next) {
   next();
 }
 
+/**
+ * @swagger
+ * /admin/register:
+ *   post:
+ *     summary: Register a new admin
+ *     description: Allows authorized users to register a new admin by providing a unique username and a secure password.
+ *     tags:
+ *       - Admin
+ *     requestBody:
+ *       required: true
+ *       description: Admin registration details.
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 description: The admin's unique username.
+ *                 example: admin123
+ *               password:
+ *                 type: string
+ *                 description: A secure password for the admin (at least 8 characters long).
+ *                 example: P@ssw0rd!
+ *             required:
+ *               - username
+ *               - password
+ *     responses:
+ *       200:
+ *         description: Admin registered successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Admin registered successfully
+ *                 adminId:
+ *                   type: string
+ *                   description: The unique ID of the newly created admin.
+ *                   example: 64b67e59fc13ae1c2400003c
+ *       400:
+ *         description: Bad request due to missing or invalid inputs.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   examples:
+ *                     missing_fields:
+ *                       summary: Missing fields
+ *                       value: Missing admin username or password
+ *                     short_password:
+ *                       summary: Password too short
+ *                       value: Password must be at least 8 characters long.
+ *                     username_exists:
+ *                       summary: Username exists
+ *                       value: Admin username already exists.
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Internal Server Error
+ *     security:
+ *       - bearerAuth: []
+ */
+
 // Admin registration
 app.post('/admin/register', verifyToken, verifyAdmin, async (req, res) => {
   const { username, password } = req.body;
