@@ -307,6 +307,64 @@ app.post('/admin/login', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /admin/users:
+ *   get:
+ *     summary: Retrieve all users
+ *     description: Allows an admin to fetch a list of all users in the database. This endpoint requires admin privileges.
+ *     tags:
+ *       - Admin
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved all users.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                     description: The unique ID of the user.
+ *                     example: 64b67e59fc13ae1c2400003c
+ *                   name:
+ *                     type: string
+ *                     description: The name of the user.
+ *                     example: John Doe
+ *                   email:
+ *                     type: string
+ *                     description: The email of the user.
+ *                     example: johndoe@example.com
+ *                   role:
+ *                     type: string
+ *                     description: The role of the user.
+ *                     example: user
+ *       401:
+ *         description: Unauthorized access due to invalid or missing token, or insufficient permissions.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Unauthorized Access
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Internal Server Error
+ */
+
 // Get all user profiles (Admin only)
 app.get('/admin/users', verifyToken, verifyAdmin, async (req, res) => {
   try {
@@ -332,7 +390,7 @@ async function run() {
 
 /**
  * @swagger
- * /user:
+ * /user/register:
  *   post:
  *     summary: Register a new user
  *     description: Creates a new user account with a hashed password.
@@ -402,7 +460,7 @@ app.post('/user', async (req, res) => {
 
 /**
  * @swagger
- * /login:
+ * /user/login:
  *   post:
  *     summary: User login
  *     description: Authenticates a user with a username and password and returns a JWT token on successful login.
