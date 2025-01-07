@@ -469,10 +469,12 @@ async function run() {
 
 /**
  * @swagger
- * /user/register:
+ * /user:
  *   post:
  *     summary: Register a new user
- *     description: Creates a new user account with a hashed password.
+ *     description: Registers a new user by providing a username, password, name, and email.
+ *     tags:
+ *       - User
  *     requestBody:
  *       required: true
  *       content:
@@ -482,60 +484,96 @@ async function run() {
  *             properties:
  *               username:
  *                 type: string
- *                 description: The username of the user.
  *                 example: johndoe
  *               password:
  *                 type: string
- *                 description: The password for the user account.
- *                 example: Password123!
+ *                 example: mysecurepassword
  *               name:
  *                 type: string
- *                 description: The full name of the user.
  *                 example: John Doe
  *               email:
  *                 type: string
- *                 description: The email address of the user.
  *                 example: johndoe@example.com
+ *             required:
+ *               - username
+ *               - password
+ *               - name
+ *               - email
  *     responses:
- *       200:
+ *       201:
  *         description: User successfully registered.
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 acknowledged:
- *                   type: boolean
- *                   example: true
  *                 insertedId:
  *                   type: string
- *                   description: The unique ID of the newly created user.
- *                   example: 60b8d295f9d5b90012e3f3e5
+ *                   example: 64b67e59fc13ae1c2400003c
  *       400:
- *         description: Bad Request - Missing or invalid data.
+ *         description: Bad request due to missing or invalid data.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: All fields are required
+ *       401:
+ *         description: Unauthorized access due to invalid token (if applicable).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Unauthorized Access
  *       500:
- *         description: Internal Server Error - Failed to save user to the database.
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Internal Server Error
  */
 
-
+// User registration
 app.post('/user', async (req, res) => {
+  const { username, password, name, email } = req.body;
+
+  if (!username || !password || !name || !email) {
+    return res.status(400).send("All fields are required");
+  }
+
+  if (password.length < 8) {
+    return res.status(400).send("Password must be at least 8 characters long.");
+  }
+
   try {
-    const hash = bcrypt.hashSync(req.body.password, 15);
+    const existingUser = await client.db("user").collection("userdetail").findOne({ username });
+    if (existingUser) {
+      return res.status(400).send("Username already exists.");
+    }
 
-    let result = await client.db("user").collection("userdetail").insertOne({
-      username: req.body.username,
+    const hash = bcrypt.hashSync(password, 15);
+
+    const result = await client.db("user").collection("userdetail").insertOne({
+      username,
       password: hash,
-      name: req.body.name,
-      email: req.body.email
+      name,
+      email
     });
-
-    res.status(200).send(result); // Send the result with status code 200
-  } catch (err) {
-    console.error("Error inserting user:", err);
-    res.status(500).send({ error: "Internal Server Error" });
+    res.send(result);
+  } catch (error) {
+    console.error("Error during user registration:", error);
+    res.status(500).send("Internal Server Error");
   }
 });
-
 
 /**
  * @swagger
