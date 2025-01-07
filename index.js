@@ -190,6 +190,38 @@ app.post('/admin/register', verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
+// Admin login
+app.post('/admin/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).send("Missing admin username or password");
+  }
+
+  try {
+    const admin = await client.db("user").collection("admin").findOne({ username });
+
+    if (!admin) {
+      return res.status(401).send("Admin username not found");
+    }
+
+    const isPasswordValid = bcrypt.compareSync(password, admin.password);
+    if (!isPasswordValid) {
+      return res.status(401).send("Wrong password! Try again");
+    }
+
+    const token = jwt.sign(
+      { _id: admin._id, username: admin.username, role: "admin" },
+      'manabolehbagi'
+    );
+
+    res.send({ _id: admin._id, token, role: "admin" });
+  } catch (error) {
+    console.error("Error during admin login:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
 async function run() {
   await client.connect();
   await client.db("admin").command({ ping: 1 });
