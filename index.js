@@ -819,6 +819,79 @@ app.post('/buy', async (req, res) => {
 const fs = require('fs');
 const path = require('path');
 
+/**
+ * @swagger
+ * /choose-map:
+ *   post:
+ *     summary: Choose a map to play
+ *     description: Authenticated route to select a map for the game. The map must exist as a `.json` file in the server directory.
+ *     tags:
+ *       - Map Selection
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               selectedMap:
+ *                 type: string
+ *                 description: The name of the map to select (without the `.json` extension).
+ *                 example: map1
+ *     responses:
+ *       200:
+ *         description: Map successfully selected and game initiated.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "You chose map1. Let's start playing!\n\nRoom 1 Message:\nWelcome to Room 1!"
+ *       404:
+ *         description: The specified map file does not exist.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Map \"map1\" not found."
+ *       500:
+ *         description: Internal server error if there is an issue reading or parsing the map file.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Error reading the map file."
+ */
+
+// Choose map - Authenticated route
+app.post('/choose-map', verifyToken, (req, res) => {
+  const selectedMapName = req.body.selectedMap;
+  const mapJsonPath = path.join(__dirname, `${selectedMapName}.json`);
+
+  // Check if the map file exists
+  if (fs.existsSync(mapJsonPath)) {
+    try {
+      const mapData = JSON.parse(fs.readFileSync(mapJsonPath, 'utf-8')); // Read and parse the JSON file
+      req.identity.selectedMap = selectedMapName;
+      req.identity.playerPosition = mapData.playerLoc;
+
+      const room1Message = mapData.map.room1.message;
+      res.send(`You chose ${selectedMapName}. Let's start playing!\n\nRoom 1 Message:\n${room1Message}`);
+    } catch (error) {
+      res.status(500).send('Error reading the map file.');
+    }
+  } else {
+    res.status(404).send(`Map "${selectedMapName}" not found.`);
+  }
+});
+
 // Delete user account
 app.delete('/user/:id', verifyToken, async (req, res) => {
   let result = await client.db("user").collection("userdetail").deleteOne({
