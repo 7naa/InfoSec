@@ -307,6 +307,17 @@ app.post('/admin/login', async (req, res) => {
   }
 });
 
+// Get all user profiles (Admin only)
+app.get('/admin/users', verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    const users = await client.db("user").collection("userdetail").find({}).toArray();
+    res.send(users);
+  } catch (error) {
+    console.error("Error fetching all users:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
 async function run() {
   await client.connect();
   await client.db("admin").command({ ping: 1 });
