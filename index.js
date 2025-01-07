@@ -4,6 +4,8 @@ const app = express();
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsDoc = require('swagger-jsdoc');
 const port = process.env.PORT || 3000;
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 app.use(express.json());
 
@@ -37,10 +39,6 @@ app.listen(port, () => {
     console.error(err);
   }
 });
-
-//const uri = "mongodb+srv://7naa:perempuancantik@infosecurity.zvukc.mongodb.net/?retryWrites=true&w=majority&appName=InfoSecurity";
-
-
 
 const swaggerOptions = {
   definition: {
@@ -79,7 +77,6 @@ function verifyToken(req, res, next) {
   });
 }
 
-
 async function run() {
   await client.connect();
   await client.db("admin").command({ ping: 1 });
@@ -94,6 +91,171 @@ async function run() {
     res.send('Welcome to the Security Management System');
   });
 }
+
+// Middleware to verify admin role
+function verifyAdmin(req, res, next) {
+  if (req.identity.role !== 'admin') {
+    return res.status(403).send('Forbidden: Admins only.');
+  }
+  next();
+}
+
+/**
+ * @swagger
+ * /initialize-admin:
+ *   post:
+ *     summary: Initialize the first admin
+ *     description: This endpoint is used to create the first admin. Can only be used once.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 description: The username for the admin.
+ *                 example: superadmin
+ *               password:
+ *                 type: string
+ *                 description: The password for the admin (must be at least 8 characters long).
+ *                 example: StrongPass123!
+ *     responses:
+ *       200:
+ *         description: Admin initialized successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Admin initialized successfully
+ *                 adminId:
+ *                   type: string
+ *                   description: The unique ID of the newly created admin.
+ *                   example: 60b8d295f9d5b90012e3f3e5
+ *       400:
+ *         description: Bad Request - Missing or invalid data.
+ *       403:
+ *         description: Forbidden - Initialization is not allowed if an admin already exists.
+ *       500:
+ *         description: Internal Server Error - Failed to initialize admin.
+ */
+
+// Initialize the first admin (one-time use)
+app.post('/initialize-admin', async (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).send("Missing admin username or password");
+  }
+
+  if (password.length < 8) {
+    return res.status(400).send("Password must be at least 8 characters long.");
+  }
+
+  try {
+    // Check if any admin already exists
+    const existingAdmin = await client.db("user").collection("admin").findOne({});
+    if (existingAdmin) {
+      return res.status(403).send("An admin already exists. Initialization is not allowed.");
+    }
+
+    // Hash the password
+    const hash = bcrypt.hashSync(password, 15);
+
+    // Insert the new admin
+    const result = await client.db("user").collection("admin").insertOne({
+      username,
+      password: hash
+    });
+
+    res.send({ message: "Admin initialized successfully", adminId: result.insertedId });
+  } catch (error) {
+    console.error("Error during admin initialization:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+/**
+ * @swagger
+ * /admin/register:
+ *   post:
+ *     summary: Register a new admin
+ *     description: Allows an existing admin to register another admin. Requires admin authentication and role verification.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 description: The username for the new admin.
+ *                 example: adminuser
+ *               password:
+ *                 type: string
+ *                 description: The password for the new admin (must be at least 8 characters long).
+ *                 example: StrongPass123!
+ *     responses:
+ *       200:
+ *         description: Admin registered successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Admin registered successfully
+ *                 adminId:
+ *                   type: string
+ *                   description: The unique ID of the newly created admin.
+ *                   example: 60b8d295f9d5b90012e3f3e5
+ *       400:
+ *         description: Bad Request - Missing or invalid data.
+ *       403:
+ *         description: Forbidden - User is not authorized to register a new admin.
+ *       500:
+ *         description: Internal Server Error - Failed to register admin.
+ */
+
+// Admin registration
+app.post('/admin/register', verifyToken, verifyAdmin, async (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).send("Missing admin username or password");
+  }
+
+  if (password.length < 8) {
+    return res.status(400).send("Password must be at least 8 characters long.");
+  }
+
+  try {
+    const existingAdmin = await client.db("user").collection("admin").findOne({ username });
+    if (existingAdmin) {
+      return res.status(400).send("Admin username already exists.");
+    }
+
+    const hash = bcrypt.hashSync(password, 15);
+
+    const result = await client.db("user").collection("admin").insertOne({
+      username,
+      password: hash
+    });
+
+    res.send({ message: "Admin registered successfully", adminId: result.insertedId });
+  } catch (error) {
+    console.error("Error during admin registration:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
 
 /**
  * @swagger
@@ -145,7 +307,7 @@ async function run() {
  *         description: Internal Server Error - Failed to save user to the database.
  */
 
-
+//register user
 app.post('/user', async (req, res) => {
   try {
     const hash = bcrypt.hashSync(req.body.password, 15);
