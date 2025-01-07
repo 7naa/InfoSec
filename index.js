@@ -376,6 +376,85 @@ app.get('/admin/users', verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /admin/user/{id}:
+ *   delete:
+ *     summary: Delete a user by ID
+ *     description: Allows an admin to delete a user by their unique ID. This action requires admin privileges.
+ *     tags:
+ *       - Admin
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: The ID of the user to be deleted.
+ *         schema:
+ *           type: string
+ *           example: 64b67e59fc13ae1c2400003c
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully deleted the user.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: User deleted successfully
+ *       404:
+ *         description: User not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: User not found
+ *       401:
+ *         description: Unauthorized access due to invalid or missing token, or insufficient permissions.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Unauthorized Access
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Internal Server Error
+ */
+
+// Delete user profile (Admin only)
+app.delete('/admin/user/:id', verifyToken, verifyAdmin, async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    const result = await client.db("user").collection("userdetail").deleteOne({ _id: new ObjectId(userId) });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).send("User not found");
+    }
+
+    res.send("User deleted successfully");
+  } catch (error) {
+    console.error("Error deleting user profile:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
 async function run() {
   await client.connect();
   await client.db("admin").command({ ping: 1 });
