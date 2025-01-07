@@ -190,6 +190,91 @@ app.post('/admin/register', verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /admin/login:
+ *   post:
+ *     summary: Admin login
+ *     description: Allows an admin to log in by providing valid credentials (username and password).
+ *     tags:
+ *       - Admin
+ *     requestBody:
+ *       required: true
+ *       description: Admin login credentials.
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 description: Admin's username.
+ *                 example: admin123
+ *               password:
+ *                 type: string
+ *                 description: Admin's password.
+ *                 example: P@ssw0rd!
+ *             required:
+ *               - username
+ *               - password
+ *     responses:
+ *       200:
+ *         description: Login successful, returns admin details and JWT token.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   description: The unique ID of the admin.
+ *                   example: 64b67e59fc13ae1c2400003c
+ *                 token:
+ *                   type: string
+ *                   description: JWT token for authentication.
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *                 role:
+ *                   type: string
+ *                   description: Role of the user.
+ *                   example: admin
+ *       400:
+ *         description: Bad request due to missing credentials.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Missing admin username or password
+ *       401:
+ *         description: Unauthorized access due to invalid username or password.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   examples:
+ *                     username_not_found:
+ *                       summary: Username not found
+ *                       value: Admin username not found
+ *                     wrong_password:
+ *                       summary: Wrong password
+ *                       value: Wrong password! Try again
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Internal Server Error
+ */
+
 // Admin login
 app.post('/admin/login', async (req, res) => {
   const { username, password } = req.body;
