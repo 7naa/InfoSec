@@ -83,6 +83,38 @@ function verifyAdmin(req, res, next) {
   next();
 }
 
+// Admin registration
+app.post('/admin/register', verifyToken, verifyAdmin, async (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).send("Missing admin username or password");
+  }
+
+  if (password.length < 8) {
+    return res.status(400).send("Password must be at least 8 characters long.");
+  }
+
+  try {
+    const existingAdmin = await client.db("user").collection("admin").findOne({ username });
+    if (existingAdmin) {
+      return res.status(400).send("Admin username already exists.");
+    }
+
+    const hash = bcrypt.hashSync(password, 15);
+
+    const result = await client.db("user").collection("admin").insertOne({
+      username,
+      password: hash
+    });
+
+    res.send({ message: "Admin registered successfully", adminId: result.insertedId });
+  } catch (error) {
+    console.error("Error during admin registration:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
 async function run() {
   await client.connect();
   await client.db("admin").command({ ping: 1 });
