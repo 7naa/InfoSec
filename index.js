@@ -683,15 +683,15 @@ app.post('/login', async (req, res) => {
  * @swagger
  * /user/{id}:
  *   get:
- *     summary: Get user details by ID
- *     description: Retrieves the details of a user by their ID. The request requires a valid token for authentication.
+ *     summary: Get user profile by ID
+ *     description: Retrieves the profile of the user based on their ID. Only authorized users (matching the ID in the token) can access their own profile.
  *     tags:
  *       - User
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         description: The unique identifier of the user whose details are to be fetched.
+ *         description: The unique identifier of the user whose profile is to be fetched.
  *         schema:
  *           type: string
  *           example: 64b67e59fc13ae1c2400003c
@@ -699,7 +699,7 @@ app.post('/login', async (req, res) => {
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Successfully fetched the user details.
+ *         description: Successfully fetched the user profile.
  *         content:
  *           application/json:
  *             schema:
@@ -747,6 +747,56 @@ app.post('/login', async (req, res) => {
  *                 error:
  *                   type: string
  *                   example: Internal Server Error
+ * 
+ * /buy:
+ *   post:
+ *     summary: Buy operation
+ *     description: A POST endpoint for initiating a buy operation. Requires the user to send a valid authorization token in the header.
+ *     tags:
+ *       - Purchase
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successful buy operation. Returns user details after successful verification of the token.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Buy operation successfully initiated.
+ *       400:
+ *         description: Bad Request if the token is not provided in the Authorization header.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Authorization token is missing
+ *       401:
+ *         description: Unauthorized if the token is invalid.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Invalid token
+ *       500:
+ *         description: Internal server error if something goes wrong during the buy operation or token verification.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Internal Server Error
  */
 
 // Get user profile
@@ -760,6 +810,14 @@ app.get('/user/:id', verifyToken, async (req, res) => {
   });
   res.send(result);
 });
+
+app.post('/buy', async (req, res) => {
+  const token = req.headers.authorization.split(" ")[1];
+  var decoded = jwt.verify(token, 'manabolehbagi');
+  console.log(decoded);
+});
+const fs = require('fs');
+const path = require('path');
 
 // Delete user account
 app.delete('/user/:id', verifyToken, async (req, res) => {
