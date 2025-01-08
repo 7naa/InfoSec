@@ -1,8 +1,8 @@
 const express = require('express');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const app = express();
-const swaggerUi = require('swagger-ui-express');
-const swaggerJsDoc = require('swagger-jsdoc');
+/*const swaggerUi = require('swagger-ui-express');
+const swaggerJsDoc = require('swagger-jsdoc');*/
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
@@ -16,17 +16,6 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
-/*async function run() {
-  try {
-    await client.connect();
-    await client.db("game").command({ ping: 1 });
-    await client.db("user").command({ ping: 1 });
-    console.log("Connected to MongoDB successfully!");
-  } catch (err) {
-    console.error("Failed to connect to MongoDB:", err);
-    process.exit(1); // Exit the app if connection fails
-  }
-}*/
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
@@ -38,7 +27,7 @@ app.listen(port, () => {
   }
 });
 
-const swaggerOptions = {
+/*const swaggerOptions = {
   definition: {
     openapi: "3.0.0",
     info: {
@@ -53,7 +42,7 @@ const swaggerOptions = {
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 let selectedMap = null;
-let playerPosition = null;
+let playerPosition = null;*/
 
 
 // Function to verify JWT token
@@ -118,81 +107,6 @@ app.post('/initialize-admin', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /admin/register:
- *   post:
- *     summary: Register a new admin
- *     description: Allows authorized users to register a new admin by providing a unique username and a secure password.
- *     tags:
- *       - Admin
- *     requestBody:
- *       required: true
- *       description: Admin registration details.
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               username:
- *                 type: string
- *                 description: The admin's unique username.
- *                 example: admin123
- *               password:
- *                 type: string
- *                 description: A secure password for the admin (at least 8 characters long).
- *                 example: P@ssw0rd!
- *             required:
- *               - username
- *               - password
- *     responses:
- *       200:
- *         description: Admin registered successfully.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Admin registered successfully
- *                 adminId:
- *                   type: string
- *                   description: The unique ID of the newly created admin.
- *                   example: 64b67e59fc13ae1c2400003c
- *       400:
- *         description: Bad request due to missing or invalid inputs.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   examples:
- *                     missing_fields:
- *                       summary: Missing fields
- *                       value: Missing admin username or password
- *                     short_password:
- *                       summary: Password too short
- *                       value: Password must be at least 8 characters long.
- *                     username_exists:
- *                       summary: Username exists
- *                       value: Admin username already exists.
- *       500:
- *         description: Internal server error.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Internal Server Error
- *     security:
- *       - bearerAuth: []
- */
-
 // Admin registration
 app.post('/admin/register', verifyToken, verifyAdmin, async (req, res) => {
   const { username, password } = req.body;
@@ -224,91 +138,6 @@ app.post('/admin/register', verifyToken, verifyAdmin, async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
-
-/**
- * @swagger
- * /admin/login:
- *   post:
- *     summary: Admin login
- *     description: Allows an admin to log in by providing valid credentials (username and password).
- *     tags:
- *       - Admin
- *     requestBody:
- *       required: true
- *       description: Admin login credentials.
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               username:
- *                 type: string
- *                 description: Admin's username.
- *                 example: admin123
- *               password:
- *                 type: string
- *                 description: Admin's password.
- *                 example: P@ssw0rd!
- *             required:
- *               - username
- *               - password
- *     responses:
- *       200:
- *         description: Login successful, returns admin details and JWT token.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 _id:
- *                   type: string
- *                   description: The unique ID of the admin.
- *                   example: 64b67e59fc13ae1c2400003c
- *                 token:
- *                   type: string
- *                   description: JWT token for authentication.
- *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
- *                 role:
- *                   type: string
- *                   description: Role of the user.
- *                   example: admin
- *       400:
- *         description: Bad request due to missing credentials.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Missing admin username or password
- *       401:
- *         description: Unauthorized access due to invalid username or password.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   examples:
- *                     username_not_found:
- *                       summary: Username not found
- *                       value: Admin username not found
- *                     wrong_password:
- *                       summary: Wrong password
- *                       value: Wrong password! Try again
- *       500:
- *         description: Internal server error.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Internal Server Error
- */
 
 // Admin login
 app.post('/admin/login', async (req, res) => {
@@ -342,64 +171,6 @@ app.post('/admin/login', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /admin/users:
- *   get:
- *     summary: Retrieve all users
- *     description: Allows an admin to fetch a list of all users in the database. This endpoint requires admin privileges.
- *     tags:
- *       - Admin
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Successfully retrieved all users.
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   _id:
- *                     type: string
- *                     description: The unique ID of the user.
- *                     example: 64b67e59fc13ae1c2400003c
- *                   name:
- *                     type: string
- *                     description: The name of the user.
- *                     example: John Doe
- *                   email:
- *                     type: string
- *                     description: The email of the user.
- *                     example: johndoe@example.com
- *                   role:
- *                     type: string
- *                     description: The role of the user.
- *                     example: user
- *       401:
- *         description: Unauthorized access due to invalid or missing token, or insufficient permissions.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Unauthorized Access
- *       500:
- *         description: Internal server error.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Internal Server Error
- */
-
 // Get all user profiles (Admin only)
 app.get('/admin/users', verifyToken, verifyAdmin, async (req, res) => {
   try {
@@ -410,67 +181,6 @@ app.get('/admin/users', verifyToken, verifyAdmin, async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
-
-/**
- * @swagger
- * /admin/user/{id}:
- *   delete:
- *     summary: Delete a user by ID
- *     description: Allows an admin to delete a user by their unique ID. This action requires admin privileges.
- *     tags:
- *       - Admin
- *     parameters:
- *       - name: id
- *         in: path
- *         required: true
- *         description: The ID of the user to be deleted.
- *         schema:
- *           type: string
- *           example: 64b67e59fc13ae1c2400003c
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Successfully deleted the user.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: User deleted successfully
- *       404:
- *         description: User not found.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: User not found
- *       401:
- *         description: Unauthorized access due to invalid or missing token, or insufficient permissions.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Unauthorized Access
- *       500:
- *         description: Internal server error.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Internal Server Error
- */
 
 // Delete user profile (Admin only)
 app.delete('/admin/user/:id', verifyToken, verifyAdmin, async (req, res) => {
@@ -489,81 +199,6 @@ app.delete('/admin/user/:id', verifyToken, verifyAdmin, async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
-
-/**
- * @swagger
- * /user:
- *   post:
- *     summary: Register a new user
- *     description: Registers a new user by providing a username, password, name, and email.
- *     tags:
- *       - User
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               username:
- *                 type: string
- *                 example: johndoe
- *               password:
- *                 type: string
- *                 example: mysecurepassword
- *               name:
- *                 type: string
- *                 example: John Doe
- *               email:
- *                 type: string
- *                 example: johndoe@example.com
- *             required:
- *               - username
- *               - password
- *               - name
- *               - email
- *     responses:
- *       201:
- *         description: User successfully registered.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 insertedId:
- *                   type: string
- *                   example: 64b67e59fc13ae1c2400003c
- *       400:
- *         description: Bad request due to missing or invalid data.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: All fields are required
- *       401:
- *         description: Unauthorized access due to invalid token (if applicable).
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Unauthorized Access
- *       500:
- *         description: Internal server error.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Internal Server Error
- */
 
 // User registration
 app.post('/user', async (req, res) => {
@@ -598,78 +233,6 @@ app.post('/user', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /login:
- *   post:
- *     summary: User login
- *     description: Authenticates a user by validating the provided username and password. Returns a JWT token upon successful login.
- *     tags:
- *       - User
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               username:
- *                 type: string
- *                 example: johndoe
- *               password:
- *                 type: string
- *                 example: mysecurepassword
- *             required:
- *               - username
- *               - password
- *     responses:
- *       200:
- *         description: Successfully logged in and a JWT token is returned.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 _id:
- *                   type: string
- *                   example: 64b67e59fc13ae1c2400003c
- *                 token:
- *                   type: string
- *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NWIxYjY2MzNkZDZkNzEyMDg2MzNlZDMyMiIsIm5hbWUiOiJKb2huIERvZSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNjYzMjE5OTYzLCJleHBpcmVkX3N0YWNrYXRhdXNiLmdodGN6dS5UAAc.5ew6pkURxgf80KwBdZI6uOSb9Eq_fYr-9sgWwr4QdTw
- *                 role:
- *                   type: string
- *                   example: user
- *       400:
- *         description: Missing username or password.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Missing username or password
- *       401:
- *         description: Unauthorized due to invalid username or password.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Wrong password! Try again
- *       500:
- *         description: Internal server error.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Internal Server Error
- */
 // User login
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
@@ -702,126 +265,6 @@ app.post('/login', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /user/{id}:
- *   get:
- *     summary: Get user profile by ID
- *     description: Retrieves the profile of the user based on their ID. Only authorized users (matching the ID in the token) can access their own profile.
- *     tags:
- *       - User
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         description: The unique identifier of the user whose profile is to be fetched.
- *         schema:
- *           type: string
- *           example: 64b67e59fc13ae1c2400003c
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Successfully fetched the user profile.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 _id:
- *                   type: string
- *                   example: 64b67e59fc13ae1c2400003c
- *                 username:
- *                   type: string
- *                   example: johndoe
- *                 name:
- *                   type: string
- *                   example: John Doe
- *                 email:
- *                   type: string
- *                   example: johndoe@example.com
- *       401:
- *         description: Unauthorized access if the token is invalid or the user does not match the requested ID.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Unauthorized access
- *       404:
- *         description: User not found if no user with the provided ID exists.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: User not found
- *       500:
- *         description: Internal server error if something goes wrong with the database or server.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Internal Server Error
- * 
- * /buy:
- *   post:
- *     summary: Buy operation
- *     description: A POST endpoint for initiating a buy operation. Requires the user to send a valid authorization token in the header.
- *     tags:
- *       - Purchase
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Successful buy operation. Returns user details after successful verification of the token.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Buy operation successfully initiated.
- *       400:
- *         description: Bad Request if the token is not provided in the Authorization header.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Authorization token is missing
- *       401:
- *         description: Unauthorized if the token is invalid.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Invalid token
- *       500:
- *         description: Internal server error if something goes wrong during the buy operation or token verification.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Internal Server Error
- */
-
 // Get user profile
 app.get('/user/:id', verifyToken, async (req, res) => {
   if (req.identity._id != req.params.id) {
@@ -841,57 +284,6 @@ app.post('/buy', async (req, res) => {
 });
 const fs = require('fs');
 const path = require('path');
-
-/**
- * @swagger
- * /choose-map:
- *   post:
- *     summary: Choose a map to play
- *     description: Authenticated route to select a map for the game. The map must exist as a `.json` file in the server directory.
- *     tags:
- *       - Map Selection
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               selectedMap:
- *                 type: string
- *                 description: The name of the map to select (without the `.json` extension).
- *                 example: map1
- *     responses:
- *       200:
- *         description: Map successfully selected and game initiated.
- *         content:
- *           text/plain:
- *             schema:
- *               type: string
- *               example: "You chose map1. Let's start playing!\n\nRoom 1 Message:\nWelcome to Room 1!"
- *       404:
- *         description: The specified map file does not exist.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: "Map \"map1\" not found."
- *       500:
- *         description: Internal server error if there is an issue reading or parsing the map file.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: "Error reading the map file."
- */
 
 // Choose map - Authenticated route
 app.post('/choose-map', verifyToken, (req, res) => {
@@ -914,67 +306,6 @@ app.post('/choose-map', verifyToken, (req, res) => {
     res.status(404).send(`Map "${selectedMapName}" not found.`);
   }
 });
-
-/**
- * @swagger
- * /move:
- *   patch:
- *     summary: Move the player to a different room in the selected map.
- *     description: Authenticated route that allows the player to move in a specified direction in the currently selected map.
- *     tags:
- *       - Map Movement
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               direction:
- *                 type: string
- *                 description: The direction in which the player wants to move (e.g., "north", "south", "east", "west").
- *                 example: north
- *     responses:
- *       200:
- *         description: The player successfully moved to a new room.
- *         content:
- *           text/plain:
- *             schema:
- *               type: string
- *               example: "You moved north. Welcome to the next room!"
- *       400:
- *         description: Bad request due to an invalid direction, missing map selection, or invalid player position.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: "Invalid direction: north"
- *       404:
- *         description: The selected map file was not found on the server.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: "Map \"map1\" not found."
- *       500:
- *         description: Internal server error due to issues reading or parsing the map file.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: "Error reading or parsing the map file."
- */
 
 // Move - Authenticated route
 app.patch('/move', verifyToken, (req, res) => {
@@ -1018,7 +349,19 @@ app.patch('/move', verifyToken, (req, res) => {
   }
 });
 
-// MongoDB connection setup
+async function run() {
+  try {
+    await client.connect();
+    await client.db("game").command({ ping: 1 });
+    await client.db("user").command({ ping: 1 });
+    console.log("Connected to MongoDB successfully!");
+  } catch (err) {
+    console.error("Failed to connect to MongoDB:", err);
+    process.exit(1); // Exit the app if connection fails
+  }
+}
+
+/* MongoDB connection setup
 async function run() {
   try {
     await client.connect();
@@ -1026,7 +369,7 @@ async function run() {
   } catch (error) {
     console.error('Failed to connect to MongoDB:', error);
   }
-}
+}*/
 run().catch(console.dir);
 
 /*run().catch(console.error);*/
