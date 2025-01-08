@@ -97,7 +97,7 @@ app.post('/initialize-admin', async (req, res) => {
 
   try {
     // Check if any admin already exists
-    const existingAdmin = await client.db("game").collection("adminlogin").findOne({});
+    const existingAdmin = await client.db("game").collection("admin").findOne({});
     if (existingAdmin) {
       return res.status(403).send("An admin already exists. Initialization is not allowed.");
     }
@@ -106,7 +106,7 @@ app.post('/initialize-admin', async (req, res) => {
     const hash = bcrypt.hashSync(password, 15);
 
     // Insert the new admin
-    const result = await client.db("game").collection("adminregister").insertOne({
+    const result = await client.db("game").collection("admin").insertOne({
       username,
       password: hash
     });
@@ -206,14 +206,14 @@ app.post('/admin/register', verifyToken, verifyAdmin, async (req, res) => {
   }
 
   try {
-    const existingAdmin = await client.db("game").collection("adminregister").findOne({ username });
+    const existingAdmin = await client.db("game").collection("admin").findOne({ username });
     if (existingAdmin) {
       return res.status(400).send("Admin username already exists.");
     }
 
     const hash = bcrypt.hashSync(password, 15);
 
-    const result = await client.db("game").collection("adminregister").insertOne({
+    const result = await client.db("game").collection("admin").insertOne({
       username,
       password: hash
     });
@@ -319,7 +319,7 @@ app.post('/admin/login', async (req, res) => {
   }
 
   try {
-    const admin = await client.db("game").collection("adminlogin").findOne({ username });
+    const admin = await client.db("game").collection("admin").findOne({ username });
 
     if (!admin) {
       return res.status(401).send("Admin username not found");
