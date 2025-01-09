@@ -491,10 +491,10 @@ app.delete('/admin/user/:id', verifyToken, verifyAdmin, async (req, res) => {
 
 /**
  * @swagger
- * /user:
+ * /registerUser:
  *   post:
  *     summary: Register a new user
- *     description: Registers a new user by providing a username, password, name, and email.
+ *     description: Register a new user by providing the required details.
  *     tags:
  *       - User
  *     requestBody:
@@ -515,25 +515,33 @@ app.delete('/admin/user/:id', verifyToken, verifyAdmin, async (req, res) => {
  *                 example: John Doe
  *               email:
  *                 type: string
+ *                 format: email
  *                 example: johndoe@example.com
+ *               phoneNumber:
+ *                 type: string
+ *                 example: "+1234567890"
  *             required:
  *               - username
  *               - password
  *               - name
  *               - email
+ *               - phoneNumber
  *     responses:
  *       201:
- *         description: User successfully registered.
+ *         description: User registration successful.
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 insertedId:
+ *                 message:
+ *                   type: string
+ *                   example: User registered successfully
+ *                 userId:
  *                   type: string
  *                   example: 64b67e59fc13ae1c2400003c
  *       400:
- *         description: Bad request due to missing or invalid data.
+ *         description: Invalid request body or duplicate username.
  *         content:
  *           application/json:
  *             schema:
@@ -541,17 +549,7 @@ app.delete('/admin/user/:id', verifyToken, verifyAdmin, async (req, res) => {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: All fields are required
- *       401:
- *         description: Unauthorized access due to invalid token (if applicable).
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Unauthorized Access
+ *                   example: Username already exists
  *       500:
  *         description: Internal server error.
  *         content:
@@ -565,33 +563,43 @@ app.delete('/admin/user/:id', verifyToken, verifyAdmin, async (req, res) => {
  */
 
 // User registration
-app.post('/user', async (req, res) => {
-  const { username, password, name, email } = req.body;
+app.post('/registerUser', async (req, res) => {
+  const { username, password, name, email, phoneNumber } = req.body;
 
-  if (!username || !password || !name || !email) {
+  // Check for missing fields
+  if (!username || !password || !name || !email || !phoneNumber) {
     return res.status(400).json({ error: "All fields are required" });
   }
 
+  // Validate password length
   if (password.length < 8) {
     return res.status(400).json({ error: "Password must be at least 8 characters long." });
   }
 
   try {
+    // Check if the username already exists
     const existingUser = await client.db("game").collection("userdetail").findOne({ username });
     if (existingUser) {
       return res.status(400).json({ error: "Username already exists." });
     }
 
+    // Hash the password for security
     const hash = bcrypt.hashSync(password, 15);
 
+    // Insert the user into the database
     const result = await client.db("game").collection("userdetail").insertOne({
       username,
       password: hash,
       name,
       email,
+      phoneNumber,
     });
 
-    res.status(201).json(result);
+    // Respond with success
+    res.status(201).json({
+      message: "User registered successfully",
+      userId: result.insertedId,
+    });
   } catch (error) {
     console.error("Error during user registration:", error.message, error.stack);
     res.status(500).json({ error: "Internal Server Error" });
