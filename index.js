@@ -7,7 +7,7 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json());
 
-const uri = "mongodb+srv://7naa:perempuancantik@infosec.v4tpw.mongodb.net/";
+const uri = "mongodb+srv://7naa:1234@infosec.v4tpw.mongodb.net/";
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
@@ -494,7 +494,7 @@ app.delete('/admin/user/:id', verifyToken, verifyAdmin, async (req, res) => {
  * /registerUser:
  *   post:
  *     summary: Register a new user
- *     description: Register a new user by providing the required details.
+ *     description: Register a new user with all required details. Ensures username uniqueness and validates password policy.
  *     tags:
  *       - User
  *     requestBody:
@@ -506,20 +506,20 @@ app.delete('/admin/user/:id', verifyToken, verifyAdmin, async (req, res) => {
  *             properties:
  *               username:
  *                 type: string
- *                 example: johndoe
+ *                 description: Unique username for the user.
  *               password:
  *                 type: string
- *                 example: mysecurepassword
+ *                 description: Password for the user (minimum 8 characters).
  *               name:
  *                 type: string
- *                 example: John Doe
+ *                 description: Full name of the user.
  *               email:
  *                 type: string
  *                 format: email
- *                 example: johndoe@example.com
+ *                 description: Email address of the user.
  *               phoneNumber:
  *                 type: string
- *                 example: "+1234567890"
+ *                 description: Phone number of the user.
  *             required:
  *               - username
  *               - password
@@ -527,8 +527,8 @@ app.delete('/admin/user/:id', verifyToken, verifyAdmin, async (req, res) => {
  *               - email
  *               - phoneNumber
  *     responses:
- *       201:
- *         description: User registration successful.
+ *       '201':
+ *         description: User registered successfully.
  *         content:
  *           application/json:
  *             schema:
@@ -536,12 +536,12 @@ app.delete('/admin/user/:id', verifyToken, verifyAdmin, async (req, res) => {
  *               properties:
  *                 message:
  *                   type: string
- *                   example: User registered successfully
+ *                   description: Success message.
  *                 userId:
  *                   type: string
- *                   example: 64b67e59fc13ae1c2400003c
- *       400:
- *         description: Invalid request body or duplicate username.
+ *                   description: ID of the newly registered user.
+ *       '400':
+ *         description: Bad request due to missing or invalid fields.
  *         content:
  *           application/json:
  *             schema:
@@ -549,8 +549,8 @@ app.delete('/admin/user/:id', verifyToken, verifyAdmin, async (req, res) => {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Username already exists
- *       500:
+ *                   description: Error message.
+ *       '500':
  *         description: Internal server error.
  *         content:
  *           application/json:
@@ -559,8 +559,9 @@ app.delete('/admin/user/:id', verifyToken, verifyAdmin, async (req, res) => {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Internal Server Error
+ *                   description: Error message for server failure.
  */
+
 
 // User registration
 app.post('/registerUser', async (req, res) => {
