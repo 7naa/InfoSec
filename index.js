@@ -64,6 +64,16 @@ function verifyToken(req, res, next) {
   });
 }
 
+app.get('/health', async (req, res) => {
+  try {
+    await client.db("game").command({ ping: 1 });
+    res.send("Database connection is healthy!");
+  } catch (error) {
+    res.status(500).send("Database connection failed.");
+  }
+});
+
+
 // Middleware to verify admin role
 function verifyAdmin(req, res, next) {
   if (req.identity.role !== 'admin') {
@@ -1009,7 +1019,7 @@ app.patch('/move', verifyToken, (req, res) => {
   }
 });
 
-async function run() {
+/*async function run() {
   try {
     await client.connect();
     await client.db("game").command({ ping: 1 });
@@ -1019,7 +1029,8 @@ async function run() {
     console.error("Failed to connect to MongoDB:", err);
     process.exit(1); // Exit the app if connection fails
   }
-}
+}*/
+
 
 /* MongoDB connection setup
 async function run() {
