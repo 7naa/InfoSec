@@ -559,17 +559,17 @@ app.post('/user', async (req, res) => {
   const { username, password, name, email } = req.body;
 
   if (!username || !password || !name || !email) {
-    return res.status(400).send("All fields are required");
+    return res.status(400).json({ error: "All fields are required" });
   }
 
   if (password.length < 8) {
-    return res.status(400).send("Password must be at least 8 characters long.");
+    return res.status(400).json({ error: "Password must be at least 8 characters long." });
   }
 
   try {
     const existingUser = await client.db("game").collection("userdetail").findOne({ username });
     if (existingUser) {
-      return res.status(400).send("Username already exists.");
+      return res.status(400).json({ error: "Username already exists." });
     }
 
     const hash = bcrypt.hashSync(password, 15);
@@ -578,14 +578,16 @@ app.post('/user', async (req, res) => {
       username,
       password: hash,
       name,
-      email
+      email,
     });
-    res.send(result);
+
+    res.status(201).json(result);
   } catch (error) {
-    console.error("Error during user registration:", error);
-    res.status(500).send("Internal Server Error");
+    console.error("Error during user registration:", error.message, error.stack);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 /**
  * @swagger
