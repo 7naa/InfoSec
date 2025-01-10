@@ -18,6 +18,8 @@ const client = new MongoClient(uri, {
   }
 });
 
+
+
 // Function to verify JWT token
 function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -304,6 +306,7 @@ app.patch('/move', verifyToken, (req, res) => {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+console.log(process.env.CLIENT_ID);  // This should print the value if set, or 'undefined' if not.
 
 // MongoDB connection setup
 async function run() {
