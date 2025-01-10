@@ -10,9 +10,6 @@ const path = require('path');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Middleware
-app.use(express.json());
-
 // MongoDB Configuration
 const uri = "mongodb+srv://7naa:1234@infosec.v4tpw.mongodb.net/";
 const client = new MongoClient(uri, {
@@ -22,6 +19,9 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+
+// Middleware
+app.use(express.json());
 
 // Swagger Configuration
 const swaggerOptions = {
@@ -45,7 +45,6 @@ function verifyToken(req, res, next) {
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) return res.sendStatus(401);
-
   jwt.verify(token, "manabolehbagi", (err, decoded) => {
     if (err) return res.sendStatus(403);
     req.identity = decoded;
@@ -125,38 +124,6 @@ app.post('/initialize-admin', async (req, res) => {
  *               password:
  *                 type: string
  *                 example: strongpassword123
- *     responses:
- *       200:
- *         description: Admin registered successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Admin registered successfully
- *                 adminId:
- *                   type: string
- *                   example: 64b75f6a12c3e9db4cf9f123
- *       400:
- *         description: Bad request (e.g., missing fields, username already exists)
- *         content:
- *           application/json:
- *             schema:
- *               type: string
- *               example: Admin username already exists.
- *       401:
- *         description: Unauthorized (missing or invalid token)
- *       403:
- *         description: Forbidden (only admins can access this endpoint)
- *         content:
- *           application/json:
- *             schema:
- *               type: string
- *               example: Forbidden: Admins only.
- *       500:
- *         description: Internal Server Error
  */
 
 // Admin Registration
