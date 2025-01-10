@@ -1,29 +1,32 @@
 const express = require('express');
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
+const { MongoClient, ServerApiVersion } = require('mongodb');
+const app = express();
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsDoc = require('swagger-jsdoc');
-const fs = require('fs');
-const path = require('path');
-
-const app = express();
 const port = process.env.PORT || 3000;
 
-// MongoDB Configuration
+app.use(express.json());
+
 const uri = "mongodb+srv://7naa:1234@infosec.v4tpw.mongodb.net/";
+// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  },
+  }
 });
 
-// Middleware
-app.use(express.json());
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`);
+}).on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${port} is already in use.`);
+  } else {
+    console.error(err);
+  }
+});
 
-// Swagger Configuration
 const swaggerOptions = {
   definition: {
     openapi: "3.0.0",
@@ -38,16 +41,25 @@ const swaggerOptions = {
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+let selectedMap = null;
+let playerPosition = null;
 
-// JWT Verification Middleware
-function verifyToken(req, res, next) {
+
+// Function to verify JWT token
+function verifyToken(req, res, next) { 
+
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
 
-  if (!token) return res.sendStatus(401);
+  if (token == null) return res.sendStatus(401);
+
   jwt.verify(token, "manabolehbagi", (err, decoded) => {
+    console.log(err);
+
     if (err) return res.sendStatus(403);
+
     req.identity = decoded;
+
     next();
   });
 }
@@ -60,18 +72,7 @@ function verifyAdmin(req, res, next) {
   next();
 }
 
-// Initialize MongoDB connection
-async function run() {
-  try {
-    await client.connect();
-    console.log("Connected to MongoDB successfully!");
-  } catch (err) {
-    console.error("Failed to connect to MongoDB:", err);
-    process.exit(1); // Exit the app if connection fails
-  }
-}
-
-// Initialize Admin Route
+// Initialize the first admin (one-time use)
 app.post('/initialize-admin', async (req, res) => {
   const { username, password } = req.body;
 
@@ -84,12 +85,16 @@ app.post('/initialize-admin', async (req, res) => {
   }
 
   try {
+    // Check if any admin already exists
     const existingAdmin = await client.db("game").collection("admin").findOne({});
     if (existingAdmin) {
       return res.status(403).send("An admin already exists. Initialization is not allowed.");
     }
 
+    // Hash the password
     const hash = bcrypt.hashSync(password, 15);
+
+    // Insert the new admin
     const result = await client.db("game").collection("admin").insertOne({
       username,
       password: hash
@@ -106,13 +111,13 @@ app.post('/initialize-admin', async (req, res) => {
  * @swagger
  * /admin/register:
  *   post:
- *     summary: Register a new admin user
+ *     summary: Register a new admin
+ *     description: Allows authorized users to register a new admin by providing a unique username and a secure password.
  *     tags:
  *       - Admin
- *     security:
- *       - bearerAuth: []
  *     requestBody:
  *       required: true
+ *       description: Admin registration details.
  *       content:
  *         application/json:
  *           schema:
@@ -120,13 +125,20 @@ app.post('/initialize-admin', async (req, res) => {
  *             properties:
  *               username:
  *                 type: string
+ *                 description: The admin's unique username.
  *                 example: admin123
  *               password:
  *                 type: string
- *                 example: strongpassword123
+ *                 description: A secure password for the admin (at least 8 characters long).
+ *                 example: P@ssw0rd!
+ *             required:
+ *               - username
+ *               - password
+ *     security:
+ *       - bearerAuth: []
  */
 
-// Admin Registration
+// Admin registration
 app.post('/admin/register', verifyToken, verifyAdmin, async (req, res) => {
   const { username, password } = req.body;
 
@@ -145,6 +157,7 @@ app.post('/admin/register', verifyToken, verifyAdmin, async (req, res) => {
     }
 
     const hash = bcrypt.hashSync(password, 15);
+
     const result = await client.db("game").collection("admin").insertOne({
       username,
       password: hash
@@ -157,7 +170,164 @@ app.post('/admin/register', verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
-// User Registration
+/**
+ * @swagger
+ * /admin/login:
+ *   post:
+ *     summary: Admin login
+ *     description: Allows an admin to log in by providing valid credentials (username and password).
+ *     tags:
+ *       - Admin
+ *     requestBody:
+ *       required: true
+ *       description: Admin login credentials.
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 description: Admin's username.
+ *                 example: admin123
+ *               password:
+ *                 type: string
+ *                 description: Admin's password.
+ *                 example: P@ssw0rd!
+ *             required:
+ *               - username
+ *               - password
+ */
+
+// Admin login
+app.post('/admin/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).send("Missing admin username or password");
+  }
+
+  try {
+    const admin = await client.db("game").collection("admin").findOne({ username });
+
+    if (!admin) {
+      return res.status(401).send("Admin username not found");
+    }
+
+    const isPasswordValid = bcrypt.compareSync(password, admin.password);
+    if (!isPasswordValid) {
+      return res.status(401).send("Wrong password! Try again");
+    }
+
+    const token = jwt.sign(
+      { _id: admin._id, username: admin.username, role: "admin" },
+      'manabolehbagi'
+    );
+
+    res.send({ _id: admin._id, token, role: "admin" });
+  } catch (error) {
+    console.error("Error during admin login:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+/**
+ * @swagger
+ * /admin/users:
+ *   get:
+ *     summary: Retrieve all users
+ *     description: Allows an admin to fetch a list of all users in the database. This endpoint requires admin privileges.
+ *     tags:
+ *       - Admin
+ *     security:
+ *       - bearerAuth: []
+ */
+
+// Get all user profiles (Admin only)
+app.get('/admin/users', verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    const users = await client.db("game").collection("userdetail").find({}).toArray();
+    res.send(users);
+  } catch (error) {
+    console.error("Error fetching all users:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+/**
+ * @swagger
+ * /admin/user/{id}:
+ *   delete:
+ *     summary: Delete a user by ID
+ *     description: Allows an admin to delete a user by their unique ID. This action requires admin privileges.
+ *     tags:
+ *       - Admin
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: The ID of the user to be deleted.
+ *         schema:
+ *           type: string
+ *           example: 64b67e59fc13ae1c2400003c
+ *     security:
+ *       - bearerAuth: []
+ */
+
+// Delete user profile (Admin only)
+app.delete('/admin/user/:id', verifyToken, verifyAdmin, async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    const result = await client.db("game").collection("userdetail").deleteOne({ _id: new ObjectId(userId) });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).send("User not found");
+    }
+
+    res.send("User deleted successfully");
+  } catch (error) {
+    console.error("Error deleting user profile:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+/**
+ * @swagger
+ * /user:
+ *   post:
+ *     summary: Register a new user
+ *     description: Register a new user by providing all required details, ensuring username uniqueness and validating password length.
+ *     tags:
+ *       - User
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 description: Unique username for the user.
+ *               password:
+ *                 type: string
+ *                 description: Password for the user (minimum 8 characters).
+ *               name:
+ *                 type: string
+ *                 description: Full name of the user.
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email address of the user.
+ *             required:
+ *               - username
+ *               - password
+ *               - name
+ *               - email
+ */
+
+//User registration
 app.post('/user', async (req, res) => {
   const { username, password, name, email } = req.body;
 
@@ -175,7 +345,7 @@ app.post('/user', async (req, res) => {
       return res.status(400).send("Username already exists.");
     }
 
-    const hash = bcrypt.hashSync(password, 15);
+    const hash = bcrypt.hashSync(password, 10);
 
     const result = await client.db("game").collection("userdetail").insertOne({
       username,
@@ -183,24 +353,250 @@ app.post('/user', async (req, res) => {
       name,
       email
     });
-    res.send({ message: "User registered successfully", userId: result.insertedId });
+    res.send(result);
   } catch (error) {
     console.error("Error during user registration:", error);
     res.status(500).send("Internal Server Error");
   }
 });
 
-// Start the Express App
-app.listen(port, () => {
-  console.log(`App listening on port ${port}`);
-}).on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`Port ${port} is already in use.`);
-  } else {
-    console.error(err);
+/**
+ * @swagger
+ * /login:
+ *   post:
+ *     summary: User login
+ *     description: Authenticates a user by validating the provided username and password. Returns a JWT token upon successful login.
+ *     tags:
+ *       - User
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: johndoe
+ *               password:
+ *                 type: string
+ *                 example: mysecurepassword
+ *             required:
+ *               - username
+ *               - password
+ */
+// User login
+app.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).send("Missing username or password");
+  }
+
+  try {
+    const user = await client.db("game").collection("userdetail").findOne({ username });
+
+    if (!user) {
+      return res.status(401).send("Username not found");
+    }
+
+    const isPasswordValid = bcrypt.compareSync(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).send("Wrong password! Try again");
+    }
+
+    const token = jwt.sign(
+      { _id: user._id, username: user.username, name: user.name, role: "user" },
+      'manabolehbagi'
+    );
+
+    res.send({ _id: user._id, token, role: "user" });
+  } catch (error) {
+    console.error("Error during user login:", error);
+    res.status(500).send("Internal Server Error");
   }
 });
 
-// Connect to MongoDB
+/**
+ * @swagger
+ * /user/{id}:
+ *   get:
+ *     summary: Get user profile by ID
+ *     description: Retrieves the profile of the user based on their ID. Only authorized users (matching the ID in the token) can access their own profile.
+ *     tags:
+ *       - User
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The unique identifier of the user whose profile is to be fetched.
+ *         schema:
+ *           type: string
+ *           example: 64b67e59fc13ae1c2400003c
+ *     security:
+ *       - bearerAuth: []
+ * 
+ * /buy:
+ *   post:
+ *     summary: Buy operation
+ *     description: A POST endpoint for initiating a buy operation. Requires the user to send a valid authorization token in the header.
+ *     tags:
+ *       - Purchase
+ *     security:
+ *       - bearerAuth: []
+ */
+
+// Get user profile
+app.get('/user/:id', verifyToken, async (req, res) => {
+  if (req.identity._id != req.params.id) {
+    return res.status(401).send('Unauthorized access');
+  }
+
+  let result = await client.db("game").collection("userdetail").findOne({
+    _id: new ObjectId(req.params.id)
+  });
+  res.send(result);
+});
+
+app.post('/buy', async (req, res) => {
+  const token = req.headers.authorization.split(" ")[1];
+  var decoded = jwt.verify(token, 'manabolehbagi');
+  console.log(decoded);
+});
+const fs = require('fs');
+const path = require('path');
+
+/**
+ * @swagger
+ * /choose-map:
+ *   post:
+ *     summary: Choose a map to play
+ *     description: Authenticated route to select a map for the game. The map must exist as a `.json` file in the server directory.
+ *     tags:
+ *       - Map Selection
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               selectedMap:
+ *                 type: string
+ *                 description: The name of the map to select (without the `.json` extension).
+ *                 example: map1
+ */
+
+// Choose map - Authenticated route
+app.post('/choose-map', verifyToken, (req, res) => {
+  const selectedMapName = req.body.selectedMap;
+  const mapJsonPath = path.join(__dirname, `${selectedMapName}.json`);
+
+  // Check if the map file exists
+  if (fs.existsSync(mapJsonPath)) {
+    try {
+      const mapData = JSON.parse(fs.readFileSync(mapJsonPath, 'utf-8')); // Read and parse the JSON file
+      req.identity.selectedMap = selectedMapName;
+      req.identity.playerPosition = mapData.playerLoc;
+
+      const room1Message = mapData.map.room1.message;
+      res.send(`You chose ${selectedMapName}. Let's start playing!\n\nRoom 1 Message:\n${room1Message}`);
+    } catch (error) {
+      res.status(500).send('Error reading the map file.');
+    }
+  } else {
+    res.status(404).send(`Map "${selectedMapName}" not found.`);
+  }
+});
+
+/**
+ * @swagger
+ * /move:
+ *   patch:
+ *     summary: Move the player to a different room in the selected map.
+ *     description: Authenticated route that allows the player to move in a specified direction in the currently selected map.
+ *     tags:
+ *       - Map Movement
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               direction:
+ *                 type: string
+ *                 description: The direction in which the player wants to move (e.g., "north", "south", "east", "west").
+ *                 example: north
+ */
+
+// Move - Authenticated route
+app.patch('/move', verifyToken, (req, res) => {
+  const direction = req.body.direction;
+
+  if (!req.identity.selectedMap) {
+    res.status(400).send("No map selected.");
+    return;
+  }
+
+  const selectedMapName = req.identity.selectedMap;
+  const mapJsonPath = path.join(__dirname, `${selectedMapName}.json`);
+
+  if (!fs.existsSync(mapJsonPath)) {
+    res.status(404).send(`Map "${selectedMapName}" not found.`);
+    return;
+  }
+
+  try {
+    const mapData = JSON.parse(fs.readFileSync(mapJsonPath, 'utf-8'));
+    const playerPosition = req.identity.playerPosition;
+    const currentRoom = mapData.map[playerPosition];
+
+    if (!currentRoom) {
+      res.status(400).send("Invalid player position.");
+      return;
+    }
+
+    const nextRoom = currentRoom[direction];
+    if (!nextRoom) {
+      res.status(400).send(`Invalid direction: ${direction}`);
+      return;
+    }
+
+    const nextRoomMessage = mapData.map[nextRoom].message;
+    req.identity.playerPosition = nextRoom; // Update player position
+
+    res.send(`You moved ${direction}. ${nextRoomMessage}`);
+  } catch (error) {
+    res.status(500).send('Error reading or parsing the map file.');
+  }
+});
+
+async function run() {
+  try {
+    await client.connect();
+    await client.db("game").command({ ping: 1 });
+    console.log("Connected to MongoDB successfully!");
+  } catch (err) {
+    console.error("Failed to connect to MongoDB:", err.message);
+    process.exit(1); // Exit the app if connection fails
+  }
+}
+
+/* MongoDB connection setup
+async function run() {
+  try {
+    await client.connect();
+    console.log('Connected to MongoDB successfully!');
+  } catch (error) {
+    console.error('Failed to connect to MongoDB:', error);
+  }
+}*/
 run().catch(console.dir);
+
+/*run().catch(console.error);*/
 
