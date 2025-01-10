@@ -90,7 +90,7 @@ app.post('/initialize-admin', async (req, res) => {
       return res.status(403).send("An admin already exists. Initialization is not allowed.");
     }
 
-    const hash = bcrypt.hashSync(password, 10);
+    const hash = bcrypt.hashSync(password, 15);
     const result = await client.db("game").collection("admin").insertOne({
       username,
       password: hash
@@ -102,6 +102,62 @@ app.post('/initialize-admin', async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
+
+/**
+ * @swagger
+ * /admin/register:
+ *   post:
+ *     summary: Register a new admin user
+ *     tags:
+ *       - Admin
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: admin123
+ *               password:
+ *                 type: string
+ *                 example: strongpassword123
+ *     responses:
+ *       200:
+ *         description: Admin registered successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Admin registered successfully
+ *                 adminId:
+ *                   type: string
+ *                   example: 64b75f6a12c3e9db4cf9f123
+ *       400:
+ *         description: Bad request (e.g., missing fields, username already exists)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: string
+ *               example: Admin username already exists.
+ *       401:
+ *         description: Unauthorized (missing or invalid token)
+ *       403:
+ *         description: Forbidden (only admins can access this endpoint)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: string
+ *               example: Forbidden: Admins only.
+ *       500:
+ *         description: Internal Server Error
+ */
 
 // Admin Registration
 app.post('/admin/register', verifyToken, verifyAdmin, async (req, res) => {
@@ -152,7 +208,7 @@ app.post('/user', async (req, res) => {
       return res.status(400).send("Username already exists.");
     }
 
-    const hash = bcrypt.hashSync(password, 10);
+    const hash = bcrypt.hashSync(password, 15);
 
     const result = await client.db("game").collection("userdetail").insertOne({
       username,
