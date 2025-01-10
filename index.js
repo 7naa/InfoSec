@@ -1,14 +1,15 @@
-const express = require('express');
-const { MongoClient, ServerApiVersion } = require('mongodb');
-const app = express();
-const swaggerUi = require('swagger-ui-express');
-const swaggerJsDoc = require('swagger-jsdoc');
-const port = process.env.PORT || 3000;
 
+const express = require('express');
+const app = express();
+const port = process.env.PORT || 4000;
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+
+// Middleware to parse JSON in request body
 app.use(express.json());
 
 const uri = "mongodb+srv://7naa:1234@infosec.v4tpw.mongodb.net/";
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -17,49 +18,17 @@ const client = new MongoClient(uri, {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
-}).on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`Port ${port} is already in use.`);
-  } else {
-    console.error(err);
-  }
-});
-
-const swaggerOptions = {
-  definition: {
-    openapi: "3.0.0",
-    info: {
-      title: "Welcome to Our Game",
-      version: "1.0.0",
-      description: "This is the best game in the world",
-    },
-  },
-  apis: ["./index.js"], // Path to your API documentation in the code
-};
-
-const swaggerDocs = swaggerJsDoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
-let selectedMap = null;
-let playerPosition = null;
-
-
 // Function to verify JWT token
-function verifyToken(req, res, next) { 
-
+function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
 
   if (token == null) return res.sendStatus(401);
 
-  jwt.verify(token, "manabolehbagi", (err, decoded) => {
-    console.log(err);
-
+  jwt.verify(token, "hurufasepuluhkali", (err, decoded) => {
     if (err) return res.sendStatus(403);
 
-    req.identity = decoded;
-
+    req.identity = decoded; // Attach decoded user data to the request
     next();
   });
 }
@@ -107,37 +76,6 @@ app.post('/initialize-admin', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /admin/register:
- *   post:
- *     summary: Register a new admin
- *     description: Allows authorized users to register a new admin by providing a unique username and a secure password.
- *     tags:
- *       - Admin
- *     requestBody:
- *       required: true
- *       description: Admin registration details.
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               username:
- *                 type: string
- *                 description: The admin's unique username.
- *                 example: admin123
- *               password:
- *                 type: string
- *                 description: A secure password for the admin (at least 8 characters long).
- *                 example: P@ssw0rd!
- *             required:
- *               - username
- *               - password
- *     security:
- *       - bearerAuth: []
- */
-
 // Admin registration
 app.post('/admin/register', verifyToken, verifyAdmin, async (req, res) => {
   const { username, password } = req.body;
@@ -170,35 +108,6 @@ app.post('/admin/register', verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /admin/login:
- *   post:
- *     summary: Admin login
- *     description: Allows an admin to log in by providing valid credentials (username and password).
- *     tags:
- *       - Admin
- *     requestBody:
- *       required: true
- *       description: Admin login credentials.
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               username:
- *                 type: string
- *                 description: Admin's username.
- *                 example: admin123
- *               password:
- *                 type: string
- *                 description: Admin's password.
- *                 example: P@ssw0rd!
- *             required:
- *               - username
- *               - password
- */
-
 // Admin login
 app.post('/admin/login', async (req, res) => {
   const { username, password } = req.body;
@@ -211,7 +120,7 @@ app.post('/admin/login', async (req, res) => {
     const admin = await client.db("game").collection("admin").findOne({ username });
 
     if (!admin) {
-      return res.status(401).send("Admin username not found");
+      return res.status(401).send("-");
     }
 
     const isPasswordValid = bcrypt.compareSync(password, admin.password);
@@ -221,7 +130,7 @@ app.post('/admin/login', async (req, res) => {
 
     const token = jwt.sign(
       { _id: admin._id, username: admin.username, role: "admin" },
-      'manabolehbagi'
+      'hurufasepuluhkali'
     );
 
     res.send({ _id: admin._id, token, role: "admin" });
@@ -230,18 +139,6 @@ app.post('/admin/login', async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
-
-/**
- * @swagger
- * /admin/users:
- *   get:
- *     summary: Retrieve all users
- *     description: Allows an admin to fetch a list of all users in the database. This endpoint requires admin privileges.
- *     tags:
- *       - Admin
- *     security:
- *       - bearerAuth: []
- */
 
 // Get all user profiles (Admin only)
 app.get('/admin/users', verifyToken, verifyAdmin, async (req, res) => {
@@ -253,26 +150,6 @@ app.get('/admin/users', verifyToken, verifyAdmin, async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
-
-/**
- * @swagger
- * /admin/user/{id}:
- *   delete:
- *     summary: Delete a user by ID
- *     description: Allows an admin to delete a user by their unique ID. This action requires admin privileges.
- *     tags:
- *       - Admin
- *     parameters:
- *       - name: id
- *         in: path
- *         required: true
- *         description: The ID of the user to be deleted.
- *         schema:
- *           type: string
- *           example: 64b67e59fc13ae1c2400003c
- *     security:
- *       - bearerAuth: []
- */
 
 // Delete user profile (Admin only)
 app.delete('/admin/user/:id', verifyToken, verifyAdmin, async (req, res) => {
@@ -292,42 +169,7 @@ app.delete('/admin/user/:id', verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /user:
- *   post:
- *     summary: Register a new user
- *     description: Register a new user by providing all required details, ensuring username uniqueness and validating password length.
- *     tags:
- *       - User
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               username:
- *                 type: string
- *                 description: Unique username for the user.
- *               password:
- *                 type: string
- *                 description: Password for the user (minimum 8 characters).
- *               name:
- *                 type: string
- *                 description: Full name of the user.
- *               email:
- *                 type: string
- *                 format: email
- *                 description: Email address of the user.
- *             required:
- *               - username
- *               - password
- *               - name
- *               - email
- */
-
-//User registration
+// User registration
 app.post('/user', async (req, res) => {
   const { username, password, name, email } = req.body;
 
@@ -345,7 +187,7 @@ app.post('/user', async (req, res) => {
       return res.status(400).send("Username already exists.");
     }
 
-    const hash = bcrypt.hashSync(password, 10);
+    const hash = bcrypt.hashSync(password, 15);
 
     const result = await client.db("game").collection("userdetail").insertOne({
       username,
@@ -360,31 +202,6 @@ app.post('/user', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /login:
- *   post:
- *     summary: User login
- *     description: Authenticates a user by validating the provided username and password. Returns a JWT token upon successful login.
- *     tags:
- *       - User
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               username:
- *                 type: string
- *                 example: johndoe
- *               password:
- *                 type: string
- *                 example: mysecurepassword
- *             required:
- *               - username
- *               - password
- */
 // User login
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
@@ -397,7 +214,7 @@ app.post('/login', async (req, res) => {
     const user = await client.db("game").collection("userdetail").findOne({ username });
 
     if (!user) {
-      return res.status(401).send("Username not found");
+      return res.status(401).send("-");
     }
 
     const isPasswordValid = bcrypt.compareSync(password, user.password);
@@ -407,7 +224,7 @@ app.post('/login', async (req, res) => {
 
     const token = jwt.sign(
       { _id: user._id, username: user.username, name: user.name, role: "user" },
-      'manabolehbagi'
+      'hurufasepuluhkali'
     );
 
     res.send({ _id: user._id, token, role: "user" });
@@ -416,35 +233,6 @@ app.post('/login', async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
-
-/**
- * @swagger
- * /user/{id}:
- *   get:
- *     summary: Get user profile by ID
- *     description: Retrieves the profile of the user based on their ID. Only authorized users (matching the ID in the token) can access their own profile.
- *     tags:
- *       - User
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         description: The unique identifier of the user whose profile is to be fetched.
- *         schema:
- *           type: string
- *           example: 64b67e59fc13ae1c2400003c
- *     security:
- *       - bearerAuth: []
- * 
- * /buy:
- *   post:
- *     summary: Buy operation
- *     description: A POST endpoint for initiating a buy operation. Requires the user to send a valid authorization token in the header.
- *     tags:
- *       - Purchase
- *     security:
- *       - bearerAuth: []
- */
 
 // Get user profile
 app.get('/user/:id', verifyToken, async (req, res) => {
@@ -458,136 +246,66 @@ app.get('/user/:id', verifyToken, async (req, res) => {
   res.send(result);
 });
 
+
 app.post('/buy', async (req, res) => {
   const token = req.headers.authorization.split(" ")[1];
-  var decoded = jwt.verify(token, 'manabolehbagi');
+  var decoded = jwt.verify(token, 'hurufasepuluhkali');
   console.log(decoded);
 });
 const fs = require('fs');
 const path = require('path');
 
-/**
- * @swagger
- * /choose-map:
- *   post:
- *     summary: Choose a map to play
- *     description: Authenticated route to select a map for the game. The map must exist as a `.json` file in the server directory.
- *     tags:
- *       - Map Selection
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               selectedMap:
- *                 type: string
- *                 description: The name of the map to select (without the `.json` extension).
- *                 example: map1
- */
-
 // Choose map - Authenticated route
 app.post('/choose-map', verifyToken, (req, res) => {
   const selectedMapName = req.body.selectedMap;
-  const mapJsonPath = path.join(__dirname, `${selectedMapName}.json`);
 
-  // Check if the map file exists
-  if (fs.existsSync(mapJsonPath)) {
+  function mapJsonPathExists(mapPath) {
     try {
-      const mapData = JSON.parse(fs.readFileSync(mapJsonPath, 'utf-8')); // Read and parse the JSON file
-      req.identity.selectedMap = selectedMapName;
-      req.identity.playerPosition = mapData.playerLoc;
-
-      const room1Message = mapData.map.room1.message;
-      res.send(`You chose ${selectedMapName}. Let's start playing!\n\nRoom 1 Message:\n${room1Message}`);
-    } catch (error) {
-      res.status(500).send('Error reading the map file.');
+      fs.accessSync(mapPath, fs.constants.F_OK);
+      return true;
+    } catch (err) {
+      return false;
     }
+  }
+
+  const mapJsonPath = `./${selectedMapName}.json`;
+  if (mapJsonPathExists(mapJsonPath)) {
+    const mapData = JSON.parse(fs.readFileSync(mapJsonPath, 'utf-8'));
+    req.identity.selectedMap = selectedMapName; // Store the selected map in the JWT
+    req.identity.playerPosition = mapData.playerLoc; // Set initial player position
+    const room1Message = mapData.map.room1.message;
+
+    res.send(`You choose ${selectedMapName}. Let's start playing!\n\nRoom 1 Message:\n${room1Message}`);
   } else {
     res.status(404).send(`Map "${selectedMapName}" not found.`);
   }
 });
-
-/**
- * @swagger
- * /move:
- *   patch:
- *     summary: Move the player to a different room in the selected map.
- *     description: Authenticated route that allows the player to move in a specified direction in the currently selected map.
- *     tags:
- *       - Map Movement
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               direction:
- *                 type: string
- *                 description: The direction in which the player wants to move (e.g., "north", "south", "east", "west").
- *                 example: north
- */
-
 // Move - Authenticated route
 app.patch('/move', verifyToken, (req, res) => {
   const direction = req.body.direction;
 
   if (!req.identity.selectedMap) {
-    res.status(400).send("No map selected.");
-    return;
+    return res.status(400).send("No map selected.");
+  }
+  const mapData = require(`./${req.identity.selectedMap}.json`);
+  const currentRoom = mapData.map[req.identity.playerPosition];
+
+  const nextRoom = currentRoom[direction];
+  if (!nextRoom) {
+    return res.status(400).send(`Invalid direction: ${direction}`);
   }
 
-  const selectedMapName = req.identity.selectedMap;
-  const mapJsonPath = path.join(__dirname, `${selectedMapName}.json`);
+  const nextRoomMessage = mapData.map[nextRoom].message;
+  req.identity.playerPosition = nextRoom;
 
-  if (!fs.existsSync(mapJsonPath)) {
-    res.status(404).send(`Map "${selectedMapName}" not found.`);
-    return;
-  }
-
-  try {
-    const mapData = JSON.parse(fs.readFileSync(mapJsonPath, 'utf-8'));
-    const playerPosition = req.identity.playerPosition;
-    const currentRoom = mapData.map[playerPosition];
-
-    if (!currentRoom) {
-      res.status(400).send("Invalid player position.");
-      return;
-    }
-
-    const nextRoom = currentRoom[direction];
-    if (!nextRoom) {
-      res.status(400).send(`Invalid direction: ${direction}`);
-      return;
-    }
-
-    const nextRoomMessage = mapData.map[nextRoom].message;
-    req.identity.playerPosition = nextRoom; // Update player position
-
-    res.send(`You moved ${direction}. ${nextRoomMessage}`);
-  } catch (error) {
-    res.status(500).send('Error reading or parsing the map file.');
-  }
+  res.send(`You moved ${direction}. ${nextRoomMessage}`);
+});
+// Start the server
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
 
-async function run() {
-  try {
-    await client.connect();
-    await client.db("game").command({ ping: 1 });
-    console.log("Connected to MongoDB successfully!");
-  } catch (err) {
-    console.error("Failed to connect to MongoDB:", err.message);
-    process.exit(1); // Exit the app if connection fails
-  }
-}
-
-/* MongoDB connection setup
+// MongoDB connection setup
 async function run() {
   try {
     await client.connect();
@@ -595,8 +313,6 @@ async function run() {
   } catch (error) {
     console.error('Failed to connect to MongoDB:', error);
   }
-}*/
+}
 run().catch(console.dir);
-
-/*run().catch(console.error);*/
 
