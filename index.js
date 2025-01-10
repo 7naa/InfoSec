@@ -7,7 +7,7 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json());
 
-const uri = "mongodb+srv://7naa:1234@infosec.v4tpw.mongodb.net/?retryWrites=true&w=majority&appName=InfoSec";
+const uri = "mongodb+srv://7naa:1234@infosec.v4tpw.mongodb.net/";
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
@@ -479,45 +479,12 @@ app.delete('/admin/user/:id', verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
-/*User registration
-app.post('/user', async (req, res) => {
-  const { username, password, name, email } = req.body;
-
-  if (!username || !password || !name || !email) {
-    return res.status(400).send("All fields are required");
-  }
-
-  if (password.length < 8) {
-    return res.status(400).send("Password must be at least 8 characters long.");
-  }
-
-  try {
-    const existingUser = await client.db("game").collection("userdetail").findOne({ username });
-    if (existingUser) {
-      return res.status(400).send("Username already exists.");
-    }
-
-    const hash = bcrypt.hashSync(password, 15);
-
-    const result = await client.db("game").collection("userdetail").insertOne({
-      username,
-      password: hash,
-      name,
-      email
-    });
-    res.send(result);
-  } catch (error) {
-    console.error("Error during user registration:", error);
-    res.status(500).send("Internal Server Error");
-  }
-});*/
-
 /**
  * @swagger
- * /registerUser:
+ * /user:
  *   post:
  *     summary: Register a new user
- *     description: Register a new user with all required details. Ensures username uniqueness and validates password policy.
+ *     description: Register a new user by providing all required details, ensuring username uniqueness and validating password length.
  *     tags:
  *       - User
  *     requestBody:
@@ -540,27 +507,23 @@ app.post('/user', async (req, res) => {
  *                 type: string
  *                 format: email
  *                 description: Email address of the user.
- *               phoneNumber:
- *                 type: string
- *                 description: Phone number of the user.
  *             required:
  *               - username
  *               - password
  *               - name
  *               - email
- *               - phoneNumber
  *     responses:
- *       '201':
+ *       '200':
  *         description: User registered successfully.
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 message:
- *                   type: string
- *                   description: Success message.
- *                 userId:
+ *                 acknowledged:
+ *                   type: boolean
+ *                   description: Indicates whether the operation was acknowledged.
+ *                 insertedId:
  *                   type: string
  *                   description: ID of the newly registered user.
  *       '400':
@@ -572,7 +535,8 @@ app.post('/user', async (req, res) => {
  *               properties:
  *                 error:
  *                   type: string
- *                   description: Error message.
+ *                   description: Error message indicating what went wrong.
+ *                   example: "All fields are required"
  *       '500':
  *         description: Internal Server Error.
  *         content:
@@ -583,71 +547,41 @@ app.post('/user', async (req, res) => {
  *                 error:
  *                   type: string
  *                   description: Generic error message.
- *                 details:
- *                   type: string
- *                   description: Specific error details for debugging.
+ *                   example: "Internal Server Error"
  */
 
-app.post('/registerUser', async (req, res) => {
-  const { username, password, name, email, phoneNumber } = req.body;
+//User registration
+app.post('/user', async (req, res) => {
+  const { username, password, name, email } = req.body;
 
-  // Check for missing fields
-  if (!username || !password || !name || !email || !phoneNumber) {
-    return res.status(400).json({ error: "All fields are required" });
+  if (!username || !password || !name || !email) {
+    return res.status(400).send("All fields are required");
   }
 
-  // Validate password length
   if (password.length < 8) {
-    return res.status(400).json({ error: "Password must be at least 8 characters long." });
+    return res.status(400).send("Password must be at least 8 characters long.");
   }
 
   try {
-    // Check database connection
-    if (!client.isConnected()) {
-      console.log("Database client not connected. Attempting to connect...");
-      await client.connect();
-      console.log("Database connection established.");
-    }
-
-    // Check if the username already exists
-    console.log(`Checking if username "${username}" already exists...`);
     const existingUser = await client.db("game").collection("userdetail").findOne({ username });
     if (existingUser) {
-      console.log("Username already exists:", existingUser);
-      return res.status(400).json({ error: "Username already exists." });
+      return res.status(400).send("Username already exists.");
     }
 
-    // Hash the password for security
-    console.log("Hashing password...");
     const hash = bcrypt.hashSync(password, 10);
-    console.log("Password hashed successfully.");
 
-    // Insert the user into the database
-    console.log("Inserting user into the database...");
     const result = await client.db("game").collection("userdetail").insertOne({
       username,
       password: hash,
       name,
-      email,
-      phoneNumber,
+      email
     });
-
-    console.log("User inserted successfully:", result.insertedId);
-
-    // Respond with success
-    res.status(201).json({
-      message: "User registered successfully",
-      userId: result.insertedId,
-    });
+    res.send(result);
   } catch (error) {
-    console.error("Error during user registration:", error.message, error.stack);
-    res.status(500).json({
-      error: "Internal Server Error",
-      details: error.message,
-    });
+    console.error("Error during user registration:", error);
+    res.status(500).send("Internal Server Error");
   }
 });
-
 
 /**
  * @swagger
