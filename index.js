@@ -92,7 +92,7 @@ app.post('/initialize-admin', async (req, res) => {
     }
 
     // Hash the password
-    const hash = bcrypt.hashSync(password, 15);
+    const hash = bcrypt.hashSync(password, 10);
 
     // Insert the new admin
     const result = await client.db("game").collection("admin").insertOne({
@@ -479,82 +479,7 @@ app.delete('/admin/user/:id', verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /user:
- *   post:
- *     summary: Register a new user
- *     description: Registers a new user by providing a username, password, name, and email.
- *     tags:
- *       - User
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               username:
- *                 type: string
- *                 example: johndoe
- *               password:
- *                 type: string
- *                 example: mysecurepassword
- *               name:
- *                 type: string
- *                 example: John Doe
- *               email:
- *                 type: string
- *                 example: johndoe@example.com
- *             required:
- *               - username
- *               - password
- *               - name
- *               - email
- *     responses:
- *       201:
- *         description: User successfully registered.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 insertedId:
- *                   type: string
- *                   example: 64b67e59fc13ae1c2400003c
- *       400:
- *         description: Bad request due to missing or invalid data.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: All fields are required
- *       401:
- *         description: Unauthorized access due to invalid token (if applicable).
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Unauthorized Access
- *       500:
- *         description: Internal server error.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Internal Server Error
- */
-
-// User registration
+/*User registration
 app.post('/user', async (req, res) => {
   const { username, password, name, email } = req.body;
 
@@ -585,7 +510,144 @@ app.post('/user', async (req, res) => {
     console.error("Error during user registration:", error);
     res.status(500).send("Internal Server Error");
   }
+});*/
+
+/**
+ * @swagger
+ * /registerUser:
+ *   post:
+ *     summary: Register a new user
+ *     description: Register a new user with all required details. Ensures username uniqueness and validates password policy.
+ *     tags:
+ *       - User
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 description: Unique username for the user.
+ *               password:
+ *                 type: string
+ *                 description: Password for the user (minimum 8 characters).
+ *               name:
+ *                 type: string
+ *                 description: Full name of the user.
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email address of the user.
+ *               phoneNumber:
+ *                 type: string
+ *                 description: Phone number of the user.
+ *             required:
+ *               - username
+ *               - password
+ *               - name
+ *               - email
+ *               - phoneNumber
+ *     responses:
+ *       '201':
+ *         description: User registered successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Success message.
+ *                 userId:
+ *                   type: string
+ *                   description: ID of the newly registered user.
+ *       '400':
+ *         description: Bad request due to missing or invalid fields.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Error message.
+ *       '500':
+ *         description: Internal Server Error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Generic error message.
+ *                 details:
+ *                   type: string
+ *                   description: Specific error details for debugging.
+ */
+
+app.post('/registerUser', async (req, res) => {
+  const { username, password, name, email, phoneNumber } = req.body;
+
+  // Check for missing fields
+  if (!username || !password || !name || !email || !phoneNumber) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  // Validate password length
+  if (password.length < 8) {
+    return res.status(400).json({ error: "Password must be at least 8 characters long." });
+  }
+
+  try {
+    // Check database connection
+    if (!client.isConnected()) {
+      console.log("Database client not connected. Attempting to connect...");
+      await client.connect();
+      console.log("Database connection established.");
+    }
+
+    // Check if the username already exists
+    console.log(`Checking if username "${username}" already exists...`);
+    const existingUser = await client.db("game").collection("userdetail").findOne({ username });
+    if (existingUser) {
+      console.log("Username already exists:", existingUser);
+      return res.status(400).json({ error: "Username already exists." });
+    }
+
+    // Hash the password for security
+    console.log("Hashing password...");
+    const hash = bcrypt.hashSync(password, 10);
+    console.log("Password hashed successfully.");
+
+    // Insert the user into the database
+    console.log("Inserting user into the database...");
+    const result = await client.db("game").collection("userdetail").insertOne({
+      username,
+      password: hash,
+      name,
+      email,
+      phoneNumber,
+    });
+
+    console.log("User inserted successfully:", result.insertedId);
+
+    // Respond with success
+    res.status(201).json({
+      message: "User registered successfully",
+      userId: result.insertedId,
+    });
+  } catch (error) {
+    console.error("Error during user registration:", error.message, error.stack);
+    res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
 });
+
 
 /**
  * @swagger
