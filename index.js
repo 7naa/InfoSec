@@ -1,7 +1,6 @@
-
 const express = require('express');
 const app = express();
-const port = process.env.PORT || 8080;
+const port = process.env.PORT || 4000;
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
@@ -9,7 +8,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 // Middleware to parse JSON in request body
 app.use(express.json());
 
-const uri = "mongodb+srv://7naa:1234@infosec.v4tpw.mongodb.net/";
+const uri = "mongodb+srv://7naa:1234@infosec.v4tpw.mongodb.net/?retryWrites=true&w=majority&appName=InfoSec";
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -17,8 +16,6 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
-
-
 
 // Function to verify JWT token
 function verifyToken(req, res, next) {
