@@ -8,7 +8,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 // Middleware to parse JSON in request body
 app.use(express.json());
 
-const uri = "mongodb+srv://7naa:1234@infosec.v4tpw.mongodb.net/?retryWrites=true&w=majority&appName=InfoSec";
+const uri = "mongodb+srv://7naa:hurufasepuluhkali@cluster0.4oeznz2.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -54,7 +54,7 @@ app.post('/initialize-admin', async (req, res) => {
 
   try {
     // Check if any admin already exists
-    const existingAdmin = await client.db("game").collection("admin").findOne({});
+    const existingAdmin = await client.db("user").collection("admin").findOne({});
     if (existingAdmin) {
       return res.status(403).send("An admin already exists. Initialization is not allowed.");
     }
@@ -63,7 +63,7 @@ app.post('/initialize-admin', async (req, res) => {
     const hash = bcrypt.hashSync(password, 15);
 
     // Insert the new admin
-    const result = await client.db("game").collection("admin").insertOne({
+    const result = await client.db("user").collection("admin").insertOne({
       username,
       password: hash
     });
@@ -88,14 +88,14 @@ app.post('/admin/register', verifyToken, verifyAdmin, async (req, res) => {
   }
 
   try {
-    const existingAdmin = await client.db("game").collection("admin").findOne({ username });
+    const existingAdmin = await client.db("user").collection("admin").findOne({ username });
     if (existingAdmin) {
       return res.status(400).send("Admin username already exists.");
     }
 
     const hash = bcrypt.hashSync(password, 15);
 
-    const result = await client.db("game").collection("admin").insertOne({
+    const result = await client.db("user").collection("admin").insertOne({
       username,
       password: hash
     });
@@ -116,7 +116,7 @@ app.post('/admin/login', async (req, res) => {
   }
 
   try {
-    const admin = await client.db("game").collection("admin").findOne({ username });
+    const admin = await client.db("user").collection("admin").findOne({ username });
 
     if (!admin) {
       return res.status(401).send("-");
@@ -142,7 +142,7 @@ app.post('/admin/login', async (req, res) => {
 // Get all user profiles (Admin only)
 app.get('/admin/users', verifyToken, verifyAdmin, async (req, res) => {
   try {
-    const users = await client.db("game").collection("userdetail").find({}).toArray();
+    const users = await client.db("user").collection("userdetail").find({}).toArray();
     res.send(users);
   } catch (error) {
     console.error("Error fetching all users:", error);
@@ -155,7 +155,7 @@ app.delete('/admin/user/:id', verifyToken, verifyAdmin, async (req, res) => {
   const userId = req.params.id;
 
   try {
-    const result = await client.db("game").collection("userdetail").deleteOne({ _id: new ObjectId(userId) });
+    const result = await client.db("user").collection("userdetail").deleteOne({ _id: new ObjectId(userId) });
 
     if (result.deletedCount === 0) {
       return res.status(404).send("User not found");
@@ -181,14 +181,14 @@ app.post('/user', async (req, res) => {
   }
 
   try {
-    const existingUser = await client.db("game").collection("userdetail").findOne({ username });
+    const existingUser = await client.db("user").collection("userdetail").findOne({ username });
     if (existingUser) {
       return res.status(400).send("Username already exists.");
     }
 
     const hash = bcrypt.hashSync(password, 15);
 
-    const result = await client.db("game").collection("userdetail").insertOne({
+    const result = await client.db("user").collection("userdetail").insertOne({
       username,
       password: hash,
       name,
@@ -210,7 +210,7 @@ app.post('/login', async (req, res) => {
   }
 
   try {
-    const user = await client.db("game").collection("userdetail").findOne({ username });
+    const user = await client.db("user").collection("userdetail").findOne({ username });
 
     if (!user) {
       return res.status(401).send("-");
@@ -239,7 +239,7 @@ app.get('/user/:id', verifyToken, async (req, res) => {
     return res.status(401).send('Unauthorized access');
   }
 
-  let result = await client.db("game").collection("userdetail").findOne({
+  let result = await client.db("user").collection("userdetail").findOne({
     _id: new ObjectId(req.params.id)
   });
   res.send(result);
@@ -303,7 +303,6 @@ app.patch('/move', verifyToken, (req, res) => {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
-console.log(process.env.CLIENT_ID);  // This should print the value if set, or 'undefined' if not.
 
 // MongoDB connection setup
 async function run() {
