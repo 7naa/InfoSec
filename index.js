@@ -319,4 +319,8 @@ app.get('/', (req, res) => {
   res.send('Hello, world! The server is running.');
 });
 
+app.post('/test', (req, res) => {
+  res.send('POST request received!');
+});
+
 
