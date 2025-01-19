@@ -17,6 +17,16 @@ const client = new MongoClient(uri, {
   }
 });
 
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`);
+}).on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${port} is already in use.`);
+  } else {
+    console.error(err);
+  }
+});
+
 // Function to verify JWT token
 function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
