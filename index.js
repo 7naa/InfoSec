@@ -5,6 +5,11 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
+// Start the server
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
+
 // Middleware to parse JSON in request body
 app.use(express.json());
 
@@ -298,11 +303,6 @@ app.patch('/move', verifyToken, (req, res) => {
   req.identity.playerPosition = nextRoom;
 
   res.send(`You moved ${direction}. ${nextRoomMessage}`);
-});
-
-// Start the server
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
 });
 
 // MongoDB connection setup
