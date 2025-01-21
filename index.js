@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-const port = process.env.PORT || 8181;
+const port = process.env.PORT || 8080;
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
@@ -299,6 +299,7 @@ app.patch('/move', verifyToken, (req, res) => {
 
   res.send(`You moved ${direction}. ${nextRoomMessage}`);
 });
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
@@ -315,12 +316,5 @@ async function run() {
 }
 run().catch(console.dir);
 
-app.get('/', (req, res) => {
-  res.send('Hello, world! The server is running.');
-});
-
-app.post('/test', (req, res) => {
-  res.send('POST request received!');
-});
 
 
