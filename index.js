@@ -5,11 +5,6 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
-// Start the server
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
-
 // Middleware to parse JSON in request body
 app.use(express.json());
 
@@ -316,8 +311,9 @@ async function run() {
 }
 run().catch(console.dir);
 
-app.get('/health', (req, res) => {
-  res.status(200).send('OK');
+// Start the server
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
 
 
