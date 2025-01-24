@@ -5,9 +5,6 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
-// Middleware to parse JSON in request body
-app.use(express.json());
-
 const uri = "mongodb+srv://7naa:1234@infosec.v4tpw.mongodb.net/?retryWrites=true&w=majority&appName=InfoSec";
 const client = new MongoClient(uri, {
   serverApi: {
@@ -16,6 +13,24 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
+
+async function run() {
+  await client.connect();
+  await client.db("game").command({ ping: 1 });
+  console.log("You successfully connected to MongoDB!");
+
+  app.use(express.json());
+  app.listen(port, () => {
+    console.log(`Server listening at http://localhost:${port}`);
+  });
+
+  app.get('/', (req, res) => {
+    res.send('Welcome to the Escape Game');
+  });
+
+
+// Middleware to parse JSON in request body
+app.use(express.json());
 
 // Function to verify JWT token
 function verifyToken(req, res, next) {
@@ -300,12 +315,12 @@ app.patch('/move', verifyToken, (req, res) => {
   res.send(`You moved ${direction}. ${nextRoomMessage}`);
 });
 
-// Start the server
+/* Start the server
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
 
-// MongoDB connection setup
+/* MongoDB connection setup
 async function run() {
   try {
     await client.connect();
@@ -314,8 +329,10 @@ async function run() {
     console.error('Failed to connect to MongoDB:', error);
   }
 }
-run().catch(console.dir);
+run().catch(console.dir);*/
+}
 
+run().catch(console.error);
 
 
 
