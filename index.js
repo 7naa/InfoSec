@@ -24,11 +24,6 @@ async function run() {
     console.log(`Server listening at http://localhost:${port}`);
   });
 
-  app.get('/', (req, res) => {
-    res.send('Welcome to the Escape Game');
-  });
-
-
 // Middleware to parse JSON in request body
 app.use(express.json());
 
