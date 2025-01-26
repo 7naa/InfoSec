@@ -16,7 +16,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
   await client.connect();
-  await client.db("game").command({ ping: 1 });
+  await client.db("admin").command({ ping: 1 });
   console.log("You successfully connected to MongoDB!");
 
   app.use(express.json());
@@ -34,7 +34,7 @@ function verifyToken(req, res, next) {
 
   if (token == null) return res.sendStatus(401);
 
-  jwt.verify(token, "hurufasepuluhkali", (err, decoded) => {
+  jwt.verify(token, "passgroupj", (err, decoded) => {
     if (err) return res.sendStatus(403);
 
     req.identity = decoded; // Attach decoded user data to the request
@@ -139,7 +139,7 @@ app.post('/admin/login', async (req, res) => {
 
     const token = jwt.sign(
       { _id: admin._id, username: admin.username, role: "admin" },
-      'hurufasepuluhkali'
+      'passgroupj'
     );
 
     res.send({ _id: admin._id, token, role: "admin" });
@@ -233,7 +233,7 @@ app.post('/login', async (req, res) => {
 
     const token = jwt.sign(
       { _id: user._id, username: user.username, name: user.name, role: "user" },
-      'hurufasepuluhkali'
+      'passgroupj'
     );
 
     res.send({ _id: user._id, token, role: "user" });
@@ -258,7 +258,7 @@ app.get('/user/:id', verifyToken, async (req, res) => {
 
 app.post('/buy', async (req, res) => {
   const token = req.headers.authorization.split(" ")[1];
-  var decoded = jwt.verify(token, 'hurufasepuluhkali');
+  var decoded = jwt.verify(token, 'passgroupj');
   console.log(decoded);
 });
 const fs = require('fs');
