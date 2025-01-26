@@ -310,7 +310,7 @@ app.patch('/move', verifyToken, (req, res) => {
   res.send(`You moved ${direction}. ${nextRoomMessage}`);
 });
 
-/* Start the server
+//Start the server
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
