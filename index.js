@@ -14,16 +14,6 @@ const client = new MongoClient(uri, {
   }
 });
 
-async function run() {
-  await client.connect();
-  await client.db("admin").command({ ping: 1 });
-  console.log("You successfully connected to MongoDB!");
-
-  app.use(express.json());
-  app.listen(port, () => {
-    console.log(`Server listening at http://localhost:${port}`);
-  });
-
 // Middleware to parse JSON in request body
 app.use(express.json());
 
@@ -315,7 +305,7 @@ app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
 
-/* MongoDB connection setup
+//MongoDB connection setup
 async function run() {
   try {
     await client.connect();
@@ -324,18 +314,6 @@ async function run() {
     console.error('Failed to connect to MongoDB:', error);
   }
 }
-run().catch(console.dir);*/
-}
+run().catch(console.dir);
 
-run().catch(console.error);
-
-app.get('/hai',(req, res) => {
-  res.send('Hello World')
-})
-
-app.listen(port, () => {
-  console.log('Example app listening on port ${port}')
-})
-
-
-
+/*run().catch(console.error);*/
