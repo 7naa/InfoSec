@@ -14,11 +14,11 @@ const client = new MongoClient(uri, {
   }
 });
 
-app.use(express.json())
+app.use(express.json());
 
 app.get('/',(req,res) => {
   res.send('hello')
-})
+});
 
 //Start the server
 app.listen(port, () => {
